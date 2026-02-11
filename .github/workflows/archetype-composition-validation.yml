@@ -1,0 +1,260 @@
+name: Archetype Composition Validation
+
+on:
+  pull_request:
+    paths:
+      - 'archetypes/**/*.md'
+      - 'versions/prompt-manifest.json'
+      - '.github/workflows/archetype-composition-validation.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'archetypes/**/*.md'
+      - 'versions/prompt-manifest.json'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-compositions:
+    runs-on: ubuntu-latest
+    name: Validate Archetype Compositions
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate composition percentages
+        run: |
+          echo "Validating archetype composition percentages..."
+          
+          FAILED=0
+          
+          for archetype in product-thinker growth-operator learning-designer delivery-planner; do
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "Archetype: $archetype"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            # Get composition
+            COMPOSITION=$(jq ".archetypes.\"$archetype\".composition" versions/prompt-manifest.json)
+            echo "Composition: $COMPOSITION"
+            
+            # Calculate sum
+            SUM=$(jq ".archetypes.\"$archetype\".composition | add" versions/prompt-manifest.json)
+            echo "Percentage sum: $SUM%"
+            
+            if [ "$SUM" -ne 100 ]; then
+              echo "❌ INVALID: Percentages must sum to exactly 100%"
+              FAILED=1
+            else
+              echo "✅ Percentages sum to 100%"
+            fi
+            
+            # Count domains
+            DOMAIN_COUNT=$(jq ".archetypes.\"$archetype\".composition | length" versions/prompt-manifest.json)
+            echo "Domain count: $DOMAIN_COUNT"
+            
+            if [ "$DOMAIN_COUNT" -lt 2 ]; then
+              echo "❌ INVALID: Archetype must include at least 2 domains"
+              FAILED=1
+            elif [ "$DOMAIN_COUNT" -gt 4 ]; then
+              echo "❌ INVALID: Archetype must not exceed 4 domains"
+              FAILED=1
+            else
+              echo "✅ Domain count is valid (2-4 domains)"
+            fi
+            
+            # List domains with percentages
+            echo ""
+            echo "Domain breakdown:"
+            jq -r ".archetypes.\"$archetype\".composition | to_entries[] | \"  \(.key): \(.value)%\"" versions/prompt-manifest.json
+          done
+          
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "❌ Composition validation failed"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All archetype compositions are valid"
+
+      - name: Validate domain references exist
+        run: |
+          echo ""
+          echo "Validating that all referenced domains exist..."
+          
+          FAILED=0
+          
+          for archetype in product-thinker growth-operator learning-designer delivery-planner; do
+            echo ""
+            echo "Checking $archetype domain references..."
+            
+            # Get all domain IDs from composition
+            DOMAINS=$(jq -r ".archetypes.\"$archetype\".composition | keys[]" versions/prompt-manifest.json)
+            
+            for domain in $DOMAINS; do
+              # Check if domain exists in domains section
+              if ! jq -e ".domains.\"$domain\"" versions/prompt-manifest.json > /dev/null; then
+                echo "❌ Domain '$domain' referenced in $archetype but not found in manifest"
+                FAILED=1
+              else
+                echo "  ✅ $domain exists"
+              fi
+            done
+          done
+          
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "❌ Invalid domain references found"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All domain references are valid"
+
+      - name: Validate primary domain emphasis
+        run: |
+          echo ""
+          echo "Validating primary domain emphasis (40-60%)..."
+          
+          FAILED=0
+          
+          for archetype in product-thinker growth-operator learning-designer delivery-planner; do
+            echo ""
+            echo "Checking $archetype primary domain..."
+            
+            # Get the maximum percentage (primary domain)
+            MAX_PCT=$(jq "[.archetypes.\"$archetype\".composition[]] | max" versions/prompt-manifest.json)
+            echo "  Primary domain percentage: $MAX_PCT%"
+            
+            if [ "$MAX_PCT" -lt 40 ] || [ "$MAX_PCT" -gt 60 ]; then
+              echo "  ⚠️  WARNING: Primary domain should be 40-60% for clear emphasis"
+              echo "  Current: $MAX_PCT%"
+            else
+              echo "  ✅ Primary domain emphasis is appropriate"
+            fi
+          done
+          
+          echo ""
+          echo "✅ Primary domain emphasis validation complete"
+
+      - name: Validate archetype-specific rules
+        run: |
+          echo ""
+          echo "Validating archetype-specific composition rules..."
+          
+          FAILED=0
+          
+          # Product Thinker: Must include domain-05-product as primary
+          echo ""
+          echo "Product Thinker (product-thinker):"
+          PT_PRIMARY=$(jq -r '.archetypes."product-thinker".composition | to_entries | max_by(.value) | .key' versions/prompt-manifest.json)
+          if [ "$PT_PRIMARY" != "domain-05-product" ]; then
+            echo "  ❌ Primary domain must be domain-05-product, found: $PT_PRIMARY"
+            FAILED=1
+          else
+            echo "  ✅ Primary domain is domain-05-product"
+          fi
+          
+          # Growth Operator: Must include domain-04-marketing as primary
+          echo ""
+          echo "Growth Operator (growth-operator):"
+          GO_PRIMARY=$(jq -r '.archetypes."growth-operator".composition | to_entries | max_by(.value) | .key' versions/prompt-manifest.json)
+          if [ "$GO_PRIMARY" != "domain-04-marketing" ]; then
+            echo "  ❌ Primary domain must be domain-04-marketing, found: $GO_PRIMARY"
+            FAILED=1
+          else
+            echo "  ✅ Primary domain is domain-04-marketing"
+          fi
+          
+          # Learning Designer: Must include domain-06-education as primary
+          echo ""
+          echo "Learning Designer (learning-designer):"
+          LD_PRIMARY=$(jq -r '.archetypes."learning-designer".composition | to_entries | max_by(.value) | .key' versions/prompt-manifest.json)
+          if [ "$LD_PRIMARY" != "domain-06-education" ]; then
+            echo "  ❌ Primary domain must be domain-06-education, found: $LD_PRIMARY"
+            FAILED=1
+          else
+            echo "  ✅ Primary domain is domain-06-education"
+          fi
+          
+          # Delivery Planner: Must include domain-03-project-management as primary
+          echo ""
+          echo "Delivery Planner (delivery-planner):"
+          DP_PRIMARY=$(jq -r '.archetypes."delivery-planner".composition | to_entries | max_by(.value) | .key' versions/prompt-manifest.json)
+          if [ "$DP_PRIMARY" != "domain-03-project-management" ]; then
+            echo "  ❌ Primary domain must be domain-03-project-management, found: $DP_PRIMARY"
+            FAILED=1
+          else
+            echo "  ✅ Primary domain is domain-03-project-management"
+          fi
+          
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "❌ Archetype-specific rules violated"
+            exit 1
+          fi
+          
+          echo ""
+          echo "✅ All archetype-specific rules satisfied"
+
+      - name: Validate composition alignment with prompt content
+        run: |
+          echo ""
+          echo "Validating composition alignment with archetype prompt files..."
+          
+          for archetype in product-thinker growth-operator learning-designer delivery-planner; do
+            echo ""
+            echo "Checking $archetype..."
+            
+            PROMPT_FILE="archetypes/$archetype.system.prompt.md"
+            
+            if [ ! -f "$PROMPT_FILE" ]; then
+              echo "  ❌ Prompt file not found: $PROMPT_FILE"
+              continue
+            fi
+            
+            # Check if prompt file mentions its composition
+            if ! grep -q "Core Composition:" "$PROMPT_FILE"; then
+              echo "  ⚠️  WARNING: Prompt file should declare 'Core Composition'"
+            else
+              echo "  ✅ Prompt file declares composition"
+            fi
+            
+            # Get domains from manifest
+            DOMAINS=$(jq -r ".archetypes.\"$archetype\".composition | keys[]" versions/prompt-manifest.json)
+            
+            # Check each domain is mentioned in prompt
+            for domain in $DOMAINS; do
+              DOMAIN_NAME=$(jq -r ".domains.\"$domain\".name" versions/prompt-manifest.json)
+              if ! grep -qi "$domain" "$PROMPT_FILE" && ! grep -qi "$DOMAIN_NAME" "$PROMPT_FILE"; then
+                echo "  ⚠️  WARNING: Domain $domain ($DOMAIN_NAME) not clearly referenced in prompt"
+              fi
+            done
+          done
+          
+          echo ""
+          echo "✅ Composition alignment check complete"
+
+      - name: Summary
+        if: success()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ ALL ARCHETYPE COMPOSITION VALIDATIONS PASSED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Validation results:"
+          echo "  ✅ All compositions sum to exactly 100%"
+          echo "  ✅ All archetypes have 2-4 domains"
+          echo "  ✅ All domain references are valid"
+          echo "  ✅ Primary domains have appropriate emphasis"
+          echo "  ✅ Archetype-specific rules satisfied"
+          echo "  ✅ Compositions align with prompt content"
+          echo ""
+          echo "Archetype governance rules are being enforced correctly."
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -1,0 +1,24 @@
+{
+  "name": "Education & Learning",
+  "description": "Curriculum design, instructional methods, learning experiences",
+  "instructions_file": "../../domains/domain-06-education.system.prompt.md",
+  "model": "gpt-4-turbo",
+  "capabilities": {
+    "web_browsing": false,
+    "dalle_image_generation": false,
+    "code_interpreter": false
+  },
+  "governance": {
+    "canonical_id": "domain-06-education",
+    "type": "domain",
+    "version": "1.0.0",
+    "prompt_hash": "063bc68c668da370dc4f6d0fa2b878e40926e8c84af3f903eafc7fcf7cf5b73f",
+    "immutable": true,
+    "verification_required": true
+  },
+  "metadata": {
+    "created": "2026-02-11",
+    "taxonomy": "10-domain-canonical",
+    "source": "https://github.com/kernel-spec/ai-portfolio-builder"
+  }
+}

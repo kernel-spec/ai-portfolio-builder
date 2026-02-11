@@ -1,0 +1,24 @@
+{
+  "name": "Communication & Presentation",
+  "description": "Effective communication, presentation design, public speaking, message delivery",
+  "instructions_file": "../../domains/domain-10-communication.system.prompt.md",
+  "model": "gpt-4-turbo",
+  "capabilities": {
+    "web_browsing": false,
+    "dalle_image_generation": false,
+    "code_interpreter": false
+  },
+  "governance": {
+    "canonical_id": "domain-10-communication",
+    "type": "domain",
+    "version": "1.0.0",
+    "prompt_hash": "6afeec84441c83b6626948b76253feb173ff3fe9bb9a7d819a96807f5b212710",
+    "immutable": true,
+    "verification_required": true
+  },
+  "metadata": {
+    "created": "2026-02-11",
+    "taxonomy": "10-domain-canonical",
+    "source": "https://github.com/kernel-spec/ai-portfolio-builder"
+  }
+}

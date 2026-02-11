@@ -1,0 +1,24 @@
+{
+  "name": "Technical & System Thinking",
+  "description": "Technical architecture, system design, engineering practices",
+  "instructions_file": "../../domains/domain-09-technical.system.prompt.md",
+  "model": "gpt-4-turbo",
+  "capabilities": {
+    "web_browsing": false,
+    "dalle_image_generation": false,
+    "code_interpreter": false
+  },
+  "governance": {
+    "canonical_id": "domain-09-technical",
+    "type": "domain",
+    "version": "1.0.0",
+    "prompt_hash": "9e8abd9efd5d481597f315052128e249872f627fc1f0633b6c06406c41f6e82d",
+    "immutable": true,
+    "verification_required": true
+  },
+  "metadata": {
+    "created": "2026-02-11",
+    "taxonomy": "10-domain-canonical",
+    "source": "https://github.com/kernel-spec/ai-portfolio-builder"
+  }
+}

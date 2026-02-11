@@ -1,0 +1,98 @@
+{
+  "version": "1.0.0",
+  "lockfileVersion": 1,
+  "generated": "2026-02-11T00:45:02Z",
+  "description": "Immutable hash registry for all governed prompts. Changes to this file require corresponding prompt version updates.",
+  "algorithm": "SHA-256",
+  "prompts": {
+    "domain-01-content": {
+      "file": "domains/domain-01-content.system.prompt.md",
+      "hash": "5b469f18967048af5534d4b1193e91ae23f684a489de1d7ae38ac6b660e2f413",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "domain-02-analysis": {
+      "file": "domains/domain-02-analysis.system.prompt.md",
+      "hash": "e7b34ef33d23d41e67ba23c640b26cbc4179840cc2be1278703e89fd74aefd9c",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "domain-03-project-management": {
+      "file": "domains/domain-03-project-management.system.prompt.md",
+      "hash": "eea7fb4690cf5109a89b112285bd17bea2cce5d64d7d1cef091b51b939ebca0f",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "domain-04-marketing": {
+      "file": "domains/domain-04-marketing.system.prompt.md",
+      "hash": "e06ecd3c8e05ab54ec3cb936a910775f1e1624d4cb535763472a46bb886ff079",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "domain-05-product": {
+      "file": "domains/domain-05-product.system.prompt.md",
+      "hash": "4ec20c4a9367d26e7ab56ba0d2f56751048cee954433d82725546a5e872a7375",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "domain-06-education": {
+      "file": "domains/domain-06-education.system.prompt.md",
+      "hash": "063bc68c668da370dc4f6d0fa2b878e40926e8c84af3f903eafc7fcf7cf5b73f",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "domain-07-personal": {
+      "file": "domains/domain-07-personal.system.prompt.md",
+      "hash": "90d1aeab82b1fab295b2295792950dc8125a2715e4a584b634bb01d4a4d95fa5",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "domain-08-business": {
+      "file": "domains/domain-08-business.system.prompt.md",
+      "hash": "09d8defd62ed12bfb851f4f78461f7557db26ddd4de2ccba3c09de362e4a72f0",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "domain-09-technical": {
+      "file": "domains/domain-09-technical.system.prompt.md",
+      "hash": "9e8abd9efd5d481597f315052128e249872f627fc1f0633b6c06406c41f6e82d",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "domain-10-communication": {
+      "file": "domains/domain-10-communication.system.prompt.md",
+      "hash": "6afeec84441c83b6626948b76253feb173ff3fe9bb9a7d819a96807f5b212710",
+      "type": "domain",
+      "version": "1.0.0"
+    },
+    "delivery-planner": {
+      "file": "archetypes/delivery-planner.system.prompt.md",
+      "hash": "f8c9f7a03e5d22aaaa94918087b1dedec8ab28ef320276140cf04f1e6f8f7911",
+      "type": "archetype",
+      "version": "1.0.0"
+    },
+    "growth-operator": {
+      "file": "archetypes/growth-operator.system.prompt.md",
+      "hash": "50e94d5f7f667194bb1bf91848f0a57004ac8267b1115997e54d65e9f4c7cc99",
+      "type": "archetype",
+      "version": "1.0.0"
+    },
+    "learning-designer": {
+      "file": "archetypes/learning-designer.system.prompt.md",
+      "hash": "7093e675eeeb75836e9f749246c93b9e0f5638c4263ffc277fa734afb8c2e120",
+      "type": "archetype",
+      "version": "1.0.0"
+    },
+    "product-thinker": {
+      "file": "archetypes/product-thinker.system.prompt.md",
+      "hash": "b662e466594c94ba6be41e7f598eea887cae6d6eca82c267a76b3767659b3a59",
+      "type": "archetype",
+      "version": "1.0.0"
+    }
+  },
+  "integrity": {
+    "total_prompts": 14,
+    "domains": 10,
+    "archetypes": 4
+  }
+}

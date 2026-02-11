@@ -1,0 +1,25 @@
+{
+  "name": "Product Thinker",
+  "description": "Data-informed, technically-feasible product strategy and design",
+  "instructions_file": "../../archetypes/product-thinker.system.prompt.md",
+  "model": "gpt-4-turbo",
+  "capabilities": {
+    "web_browsing": false,
+    "dalle_image_generation": false,
+    "code_interpreter": false
+  },
+  "governance": {
+    "canonical_id": "product-thinker",
+    "type": "archetype",
+    "version": "1.0.0",
+    "prompt_hash": "b662e466594c94ba6be41e7f598eea887cae6d6eca82c267a76b3767659b3a59",
+    "composition": {"domain-05-product":50,"domain-02-analysis":30,"domain-09-technical":20},
+    "immutable": true,
+    "verification_required": true
+  },
+  "metadata": {
+    "created": "2026-02-11",
+    "taxonomy": "10-domain-canonical",
+    "source": "https://github.com/kernel-spec/ai-portfolio-builder"
+  }
+}

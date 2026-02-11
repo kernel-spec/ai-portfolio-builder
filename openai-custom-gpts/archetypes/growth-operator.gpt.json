@@ -1,0 +1,25 @@
+{
+  "name": "Growth Operator",
+  "description": "Data-driven growth strategy with effective execution",
+  "instructions_file": "../../archetypes/growth-operator.system.prompt.md",
+  "model": "gpt-4-turbo",
+  "capabilities": {
+    "web_browsing": false,
+    "dalle_image_generation": false,
+    "code_interpreter": false
+  },
+  "governance": {
+    "canonical_id": "growth-operator",
+    "type": "archetype",
+    "version": "1.0.0",
+    "prompt_hash": "50e94d5f7f667194bb1bf91848f0a57004ac8267b1115997e54d65e9f4c7cc99",
+    "composition": {"domain-04-marketing":50,"domain-02-analysis":30,"domain-03-project-management":20},
+    "immutable": true,
+    "verification_required": true
+  },
+  "metadata": {
+    "created": "2026-02-11",
+    "taxonomy": "10-domain-canonical",
+    "source": "https://github.com/kernel-spec/ai-portfolio-builder"
+  }
+}

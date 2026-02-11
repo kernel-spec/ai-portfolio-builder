@@ -2,34 +2,64 @@
 
 ## 10-Domain Canonical Taxonomy for AI System Prompts
 
-This repository contains a governed set of domain atoms and archetypes for building AI assistant capabilities with strict domain boundaries and clear composition rules.
+This repository contains a **governed set of domain atoms and archetypes** for building AI assistant capabilities with strict domain boundaries, cryptographic hash verification, and comprehensive governance enforcement.
+
+**Version**: 1.0.0  
+**Status**: Enterprise-Grade, Immutable-by-Default, Auditable
 
 ## Overview
 
 The taxonomy consists of:
 - **10 Domain Atoms**: Fundamental capabilities, each representing one canonical domain
-- **Archetypes**: Composed assistants that combine multiple domain atoms for specific use cases
+- **4 Archetypes**: Composed assistants that combine multiple domain atoms for specific use cases
+- **Governance System**: Hash verification, CI enforcement, and audit logging
+- **Runtime Verification**: Cloudflare Worker for dispatch integrity
+- **OpenAI Integration**: Custom GPT configurations for all agents
+
+## Quick Start
+
+### For Users
+1. **Browse Domains**: See canonical domain definitions below
+2. **Choose Agent**: Select domain atom or archetype for your need
+3. **Verify Hash**: Check `versions/prompt-lock.json` for current hash
+4. **Deploy**: Use prompt with hash verification enabled
+
+### For Developers
+1. **Clone Repository**: `git clone https://github.com/kernel-spec/ai-portfolio-builder.git`
+2. **Review Governance**: Read `protocols/orchestration.rules.md`
+3. **Check Manifest**: See `versions/prompt-manifest.json` for all agents
+4. **Make Changes**: Follow governance rules (see Contributing)
 
 ## Repository Structure
 
 ```
-/domains/                     # Domain atom system prompts
-  domain-01-content.system.prompt.md
-  domain-02-analysis.system.prompt.md
-  domain-03-project-management.system.prompt.md
-  domain-04-marketing.system.prompt.md
-  domain-05-product.system.prompt.md
-  domain-06-education.system.prompt.md
-  domain-07-personal.system.prompt.md
-  domain-08-business.system.prompt.md
-  domain-09-technical.system.prompt.md
-  domain-10-communication.system.prompt.md
-
-/archetypes/                  # Archetype composition system prompts
-  product-thinker.system.prompt.md
-  growth-operator.system.prompt.md
-  learning-designer.system.prompt.md
-  delivery-planner.system.prompt.md
+/domains/                     # Domain atom system prompts (10 files)
+/archetypes/                  # Archetype composition system prompts (4 files)
+/versions/                    # Governance and version control
+  prompt-manifest.json        # Complete agent metadata
+  prompt-lock.json           # SHA-256 hash registry (immutable)
+/protocols/                   # Governance protocols
+  handoff.schema.md          # Agent handoff protocol
+  response.schema.md         # Response format specification
+  orchestration.rules.md     # Orchestration and governance rules
+  refusal.rules.md           # Refusal patterns and boundaries
+/cloudflare-worker/          # Runtime verification worker
+  index.js                   # Hash verification dispatcher
+  prompt-lock.json          # Lock file copy for worker
+  wrangler.toml             # Worker configuration
+  dispatcher.contract.md    # API documentation
+/openai-custom-gpts/         # OpenAI Custom GPT configurations
+  atoms/                     # Domain configs (10 files)
+  archetypes/                # Archetype configs (4 files)
+  orchestrator/              # Orchestrator config
+  README.md                  # GPT setup guide
+/.github/workflows/          # CI enforcement
+  schema-validation.yml      # JSON schema validation
+  version-hash-enforcement.yml   # Hash verification
+  forbidden-file-changes.yml     # Protected file monitoring
+  archetype-composition-validation.yml   # Composition rules
+/CHANGELOG.md               # Version history
+/SECURITY.md                # Security policy and vulnerability reporting
 ```
 
 ## Canonical Domains (Non-Negotiable)
@@ -213,15 +243,151 @@ The taxonomy consists of:
 [Limitations and boundaries]
 ```
 
+## Governance System
+
+### Immutability and Verification
+
+This system enforces governance through:
+
+1. **Cryptographic Hashing**: SHA-256 hashes for all prompts
+2. **Lock File Registry**: Immutable hash registry in `versions/prompt-lock.json`
+3. **CI Enforcement**: Automated validation on every PR
+4. **Runtime Verification**: Cloudflare Worker verifies before dispatch
+5. **Audit Logging**: Complete traceability of all changes
+
+### Core Governance Rules
+
+1. **Hash Verification is Mandatory**: No prompt can be dispatched without verified hash
+2. **Domain Boundaries are Strict**: Domains cannot perform other domains' work
+3. **Composition Must Sum to 100%**: Archetype percentages must total exactly 100%
+4. **Immutability by Default**: Domain definitions require major version to change
+5. **Fail Closed**: System refuses rather than approximates when unclear
+6. **GitHub is Source of Truth**: Repository is canonical, not UI
+
+### Security
+
+See [SECURITY.md](SECURITY.md) for:
+- Vulnerability reporting process
+- Security best practices
+- Incident response procedures
+- Hash verification requirements
+
+## Using This System
+
+### 1. Select Agent
+
+**For Single-Domain Tasks**:
+- Use domain atom directly (e.g., `domain-01-content` for writing)
+
+**For Multi-Domain Tasks**:
+- Check archetypes first (e.g., `product-thinker` for product strategy)
+- Use orchestrator for complex coordination
+
+### 2. Verify Hash
+
+Before using any prompt:
+1. Find agent in `versions/prompt-manifest.json`
+2. Get hash from `versions/prompt-lock.json`
+3. Verify prompt content matches hash
+4. Use Cloudflare Worker for runtime verification
+
+### 3. Deploy with Governance
+
+**OpenAI Custom GPTs**:
+- Use configs from `openai-custom-gpts/` directory
+- Follow setup guide in `openai-custom-gpts/README.md`
+- Never modify instructions manually
+
+**Custom Integration**:
+- Integrate Cloudflare Worker for hash verification
+- Follow protocols in `protocols/` directory
+- Implement handoff schema for agent coordination
+
+### 4. Monitor and Audit
+
+- Set up alerts for hash verification failures
+- Review audit logs regularly
+- Investigate all security flags immediately
+- Keep Custom GPTs synchronized with repository
+
 ## Contributing
 
-When extending this taxonomy:
+### For Prompt Changes
+
+1. **Modify Prompt File**: Update domain or archetype prompt
+2. **Recalculate Hash**: `sha256sum <file>`
+3. **Update Lock File**: Update hash in `versions/prompt-lock.json`
+4. **Update Manifest**: Increment version if needed
+5. **Document Change**: Add entry to `CHANGELOG.md`
+6. **Test**: Ensure all CI workflows pass
+7. **Submit PR**: Include justification for change
+
+### For New Archetypes
+
+1. **Design Composition**: Select 2-4 domains, sum to 100%
+2. **Create Prompt File**: Follow archetype template
+3. **Update Manifest**: Add to `versions/prompt-manifest.json`
+4. **Calculate Hash**: Add to `versions/prompt-lock.json`
+5. **Create GPT Config**: Add to `openai-custom-gpts/archetypes/`
+6. **Document**: Update README and CHANGELOG
+7. **Validate**: Ensure composition validation passes
+
+### Rules for Contributors
 
 1. **Respect Domain Boundaries**: Do not modify canonical domain definitions
-2. **Create Archetypes, Not Hybrids**: Compose existing domains rather than creating overlapping domains
-3. **Follow Formats**: Use the canonical system prompt structures
-4. **Document Integration**: Clearly specify how domains interact in archetypes
-5. **Provide Examples**: Include scenario examples for archetypes
+2. **Follow Governance**: All changes require hash updates
+3. **Maintain Quality**: Meet domain quality standards
+4. **Document Everything**: Changes, rationale, and impact
+5. **Test Thoroughly**: All CI checks must pass
+
+### What Cannot Be Modified
+
+- Canonical 10-domain taxonomy (immutable)
+- Core governance rules (require major version)
+- Hash verification requirement (non-negotiable)
+- Domain boundary definitions (permanent)
+
+## Architecture
+
+### Design-Time Focus
+
+This repository is **design-time only**:
+- ✅ System prompt definitions
+- ✅ Governance rules and protocols
+- ✅ Hash verification infrastructure
+- ✅ CI enforcement
+- ❌ Runtime execution logic
+- ❌ Model fine-tuning
+- ❌ UI or frontend
+- ❌ Business workflows
+
+### Integration Points
+
+1. **Prompt Manifest** (`versions/prompt-manifest.json`)
+   - Complete metadata for all agents
+   - Canonical IDs and versions
+   - Archetype compositions
+
+2. **Prompt Lock File** (`versions/prompt-lock.json`)
+   - SHA-256 hashes for all prompts
+   - Immutable integrity registry
+   - Version synchronization
+
+3. **Cloudflare Worker** (`cloudflare-worker/`)
+   - Runtime hash verification
+   - Dispatch authorization
+   - Audit logging
+
+4. **CI Workflows** (`.github/workflows/`)
+   - Automated governance enforcement
+   - Hash verification on PR
+   - Composition validation
+
+5. **Protocols** (`protocols/`)
+   - Handoff schema
+   - Response format
+   - Orchestration rules
+   - Refusal patterns
 
 ## Design Philosophy
 
@@ -230,9 +396,25 @@ This taxonomy is built on the principle of **composition over complexity**:
 - **Atomic**: Each domain is a focused, single-responsibility unit
 - **Composable**: Domains combine to create more complex capabilities
 - **Governed**: Strict boundaries prevent overlap and confusion
+- **Immutable**: Changes are controlled and auditable
+- **Secure**: Cryptographic verification ensures integrity
 - **Scalable**: New archetypes can be created without modifying domains
 - **Clear**: Explicit scopes and constraints eliminate ambiguity
+- **Traceable**: Full audit trail for all changes
+
+## Version History
+
+Current version: **1.0.0**
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history and changes.
 
 ## License
 
 This taxonomy is designed for AI system prompt development and is provided as-is for use in AI assistant configuration.
+
+## Support
+
+- **Issues**: GitHub Issues for bugs and feature requests
+- **Security**: See [SECURITY.md](SECURITY.md) for vulnerability reporting
+- **Documentation**: This README and protocol files
+- **Discussions**: GitHub Discussions for questions

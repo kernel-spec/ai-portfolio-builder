@@ -1,42 +1,34 @@
 name = "ai-portfolio-builder-prompt-dispatcher"
 main = "index.js"
-compatibility_date = "2024-01-01"
 
-# Account and worker configuration
-account_id = "" # Set your Cloudflare account ID
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
 workers_dev = true
 
-# Route configuration (configure after deployment)
-# routes = [
-#   { pattern = "prompts.yourdomain.com/*", zone_name = "yourdomain.com" }
-# ]
+########################################
+# CI-First Deployment
+########################################
+# account_id NOT required when deploying via GitHub Action
+# using CLOUDFLARE_API_TOKEN
 
-# Environment variables
+########################################
+# Production Environment
+########################################
+
 [env.production]
-name = "ai-portfolio-builder-prompt-dispatcher-prod"
+workers_dev = true
 
-[env.staging]
-name = "ai-portfolio-builder-prompt-dispatcher-staging"
+########################################
+# Security & Limits
+########################################
 
-# Build configuration
-[build]
-command = ""
-
-# KV Namespace bindings for audit logs (optional)
-# [[kv_namespaces]]
-# binding = "AUDIT_LOGS"
-# id = ""
-# preview_id = ""
-
-# Durable Objects (for future stateful features)
-# [[durable_objects.bindings]]
-# name = "DISPATCH_STATE"
-# class_name = "DispatchState"
-# script_name = "ai-portfolio-builder-prompt-dispatcher"
-
-# Limits and configuration
+# Fail-closed minimal CPU allocation
 limits = { cpu_ms = 50 }
 
-# Analytics and logging
+########################################
+# Observability
+########################################
+
 [observability]
 enabled = true

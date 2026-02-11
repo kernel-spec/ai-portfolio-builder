@@ -16,6 +16,9 @@ on:
       - 'versions/**'
       - 'protocols/**'
 
+permissions:
+  contents: read
+
 jobs:
   check-protected-files:
     runs-on: ubuntu-latest

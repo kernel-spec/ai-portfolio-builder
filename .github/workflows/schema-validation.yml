@@ -13,6 +13,9 @@ on:
       - 'versions/prompt-manifest.json'
       - 'versions/prompt-lock.json'
 
+permissions:
+  contents: read
+
 jobs:
   validate-json-schema:
     runs-on: ubuntu-latest

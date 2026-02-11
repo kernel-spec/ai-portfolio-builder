@@ -13,6 +13,9 @@ on:
       - 'archetypes/**/*.md'
       - 'versions/prompt-manifest.json'
 
+permissions:
+  contents: read
+
 jobs:
   validate-compositions:
     runs-on: ubuntu-latest

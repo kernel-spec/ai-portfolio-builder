@@ -1,0 +1,42 @@
+name = "ai-portfolio-builder-prompt-dispatcher"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# Account and worker configuration
+account_id = "" # Set your Cloudflare account ID
+workers_dev = true
+
+# Route configuration (configure after deployment)
+# routes = [
+#   { pattern = "prompts.yourdomain.com/*", zone_name = "yourdomain.com" }
+# ]
+
+# Environment variables
+[env.production]
+name = "ai-portfolio-builder-prompt-dispatcher-prod"
+
+[env.staging]
+name = "ai-portfolio-builder-prompt-dispatcher-staging"
+
+# Build configuration
+[build]
+command = ""
+
+# KV Namespace bindings for audit logs (optional)
+# [[kv_namespaces]]
+# binding = "AUDIT_LOGS"
+# id = ""
+# preview_id = ""
+
+# Durable Objects (for future stateful features)
+# [[durable_objects.bindings]]
+# name = "DISPATCH_STATE"
+# class_name = "DispatchState"
+# script_name = "ai-portfolio-builder-prompt-dispatcher"
+
+# Limits and configuration
+limits = { cpu_ms = 50 }
+
+# Analytics and logging
+[observability]
+enabled = true

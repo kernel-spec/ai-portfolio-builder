@@ -1,0 +1,24 @@
+{
+  "name": "Marketing & Growth",
+  "description": "Market positioning, customer acquisition, brand development, growth tactics",
+  "instructions_file": "../../domains/domain-04-marketing.system.prompt.md",
+  "model": "gpt-4-turbo",
+  "capabilities": {
+    "web_browsing": false,
+    "dalle_image_generation": false,
+    "code_interpreter": false
+  },
+  "governance": {
+    "canonical_id": "domain-04-marketing",
+    "type": "domain",
+    "version": "1.0.0",
+    "prompt_hash": "e06ecd3c8e05ab54ec3cb936a910775f1e1624d4cb535763472a46bb886ff079",
+    "immutable": true,
+    "verification_required": true
+  },
+  "metadata": {
+    "created": "2026-02-11",
+    "taxonomy": "10-domain-canonical",
+    "source": "https://github.com/kernel-spec/ai-portfolio-builder"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Content Creation",
+  "description": "Ideation, creation, editing, and production of content across all formats",
+  "instructions_file": "../../domains/domain-01-content.system.prompt.md",
+  "model": "gpt-4-turbo",
+  "capabilities": {
+    "web_browsing": false,
+    "dalle_image_generation": false,
+    "code_interpreter": false
+  },
+  "governance": {
+    "canonical_id": "domain-01-content",
+    "type": "domain",
+    "version": "1.0.0",
+    "prompt_hash": "5b469f18967048af5534d4b1193e91ae23f684a489de1d7ae38ac6b660e2f413",
+    "immutable": true,
+    "verification_required": true
+  },
+  "metadata": {
+    "created": "2026-02-11",
+    "taxonomy": "10-domain-canonical",
+    "source": "https://github.com/kernel-spec/ai-portfolio-builder"
+  }
+}

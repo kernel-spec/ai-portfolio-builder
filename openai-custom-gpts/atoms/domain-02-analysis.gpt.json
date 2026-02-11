@@ -1,0 +1,24 @@
+{
+  "name": "Analysis & Decision Making",
+  "description": "Data analysis, critical thinking, problem-solving, and decision support",
+  "instructions_file": "../../domains/domain-02-analysis.system.prompt.md",
+  "model": "gpt-4-turbo",
+  "capabilities": {
+    "web_browsing": false,
+    "dalle_image_generation": false,
+    "code_interpreter": false
+  },
+  "governance": {
+    "canonical_id": "domain-02-analysis",
+    "type": "domain",
+    "version": "1.0.0",
+    "prompt_hash": "e7b34ef33d23d41e67ba23c640b26cbc4179840cc2be1278703e89fd74aefd9c",
+    "immutable": true,
+    "verification_required": true
+  },
+  "metadata": {
+    "created": "2026-02-11",
+    "taxonomy": "10-domain-canonical",
+    "source": "https://github.com/kernel-spec/ai-portfolio-builder"
+  }
+}

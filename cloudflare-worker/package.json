@@ -1,0 +1,23 @@
+{
+  "name": "ai-portfolio-builder-prompt-dispatcher",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for prompt integrity verification and dispatch",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "prompt",
+    "verification",
+    "governance"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "wrangler": "^3.80.0"
+  }
+}

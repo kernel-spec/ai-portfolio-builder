@@ -1,4 +1,4 @@
-name = "ai-portfolio-builder"
+name = "ai-portfolio-builder-prompt-dispatcher"
 main = "index.js"
 
 # Use latest stable runtime compatibility

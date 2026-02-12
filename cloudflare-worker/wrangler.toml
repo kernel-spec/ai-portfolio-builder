@@ -33,6 +33,6 @@ workers_dev = true
 # [vars]
 # ENVIRONMENT = "production"
 
-# Example secret binding (set via GitHub secret + wrangler secret put if needed):
-# [secrets]
-# OPENAI_API_KEY
+# Secrets are set via 'wrangler secret put <KEY>' or GitHub Actions
+# They are NOT declared in this file
+# Example: wrangler secret put OPENAI_API_KEY

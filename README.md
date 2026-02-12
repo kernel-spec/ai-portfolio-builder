@@ -310,6 +310,39 @@ Before using any prompt:
 - Investigate all security flags immediately
 - Keep Custom GPTs synchronized with repository
 
+### 5. Forensic Validation Output
+
+For comprehensive governance validation and audit purposes, use the forensic validation output script:
+
+```bash
+# Output all critical governance files
+./forensic-validation-output.sh
+
+# Save to timestamped file for audit trail
+./forensic-validation-output.sh > forensic-validation-$(date +%Y%m%d-%H%M%S).txt
+
+# Verify all files are present (should output 41)
+./forensic-validation-output.sh | grep -c "===== FILE:"
+```
+
+**What it outputs** (41 critical files):
+- Governance documentation and audit reports
+- Cryptographic lock files (versions and deployment)
+- Protocol definitions (handoff, orchestration, refusal, response)
+- All 10 domain prompt atoms
+- All 4 archetype compositions
+- Cloudflare Worker contract
+- All 15 OpenAI Custom GPT configurations
+
+**Use cases**:
+- Pre-deployment verification
+- Security audits and compliance
+- Incident response and forensic analysis
+- Version comparison and change tracking
+- CI/CD integration and validation
+
+See [FORENSIC_VALIDATION_OUTPUT.md](FORENSIC_VALIDATION_OUTPUT.md) for complete documentation and [forensic-validation-examples.sh](forensic-validation-examples.sh) for usage examples.
+
 ## Contributing
 
 ### For Prompt Changes

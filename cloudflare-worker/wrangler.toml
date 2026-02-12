@@ -1,39 +1,49 @@
 # cloudflare-worker/wrangler.toml
-name = 'ai-portfolio-builder'
+
+name = "ai-portfolio-builder-prompt-dispatcher"
 main = "index.js"
 
-# Use latest stable runtime compatibility
+# Cloudflare Account
+account_id = "e506d2ef2602866c8b18942256a5b3b2"
+
+# Runtime compatibility
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Deploy to workers.dev (no custom domain required)
+# Deploy to workers.dev (no custom domain)
 workers_dev = true
 
-# Account configuration (auto-detected via API token in CI)
-# account_id is NOT required if using wrangler-action with API token
-
-########################################
-# Environment Configuration
-########################################
+############################################################
+# ENVIRONMENTS
+############################################################
 
 [env.production]
+name = "ai-portfolio-builder-prompt-dispatcher-prod"
 workers_dev = true
 
-########################################
-# Security & Governance
-########################################
+############################################################
+# GOVERNANCE
+############################################################
 
-# Fail closed if no matching route
-# (Worker must explicitly handle all routes in index.js)
+# No routes defined → workers.dev only
+# Fail-closed behavior enforced in index.js
 
-########################################
-# Future Secret Bindings (Optional)
-########################################
+############################################################
+# OPTIONAL: Variables (future)
+############################################################
 
-# Example:
 # [vars]
 # ENVIRONMENT = "production"
 
-# Secrets are set via 'wrangler secret put <KEY>' or GitHub Actions
-# They are NOT declared in this file
-# Example: wrangler secret put OPENAI_API_KEY
+############################################################
+# OPTIONAL: KV / Durable Objects (future extension)
+############################################################
+
+# [[kv_namespaces]]
+# binding = "AUDIT_LOGS"
+# id = ""
+# preview_id = ""
+
+# [[durable_objects.bindings]]
+# name = "DISPATCH_STATE"
+# class_name = "DispatchState"

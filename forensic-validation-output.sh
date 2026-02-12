@@ -93,5 +93,5 @@ output_file "openai-custom-gpts/atoms/domain-10-communication.gpt.json"
 
 echo "============================================"
 echo "FORENSIC VALIDATION OUTPUT COMPLETE"
-echo "Total Files Output: 38"
+echo "Total Files Output: 41"
 echo "============================================"

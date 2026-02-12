@@ -1,4 +1,5 @@
-name = "ai-portfolio-builder-prompt-dispatcher"
+# cloudflare-worker/wrangler.toml
+name = 'ai-portfolio-builder'
 main = "index.js"
 
 # Use latest stable runtime compatibility

@@ -1,0 +1,313 @@
+{
+  "name": "ai-portfolio-builder",
+  "full_name": "kernel-spec/ai-portfolio-builder",
+  "description": "10-Domain Canonical Taxonomy for AI System Prompts - A governed set of domain atoms and archetypes for building AI assistant capabilities",
+  "version": "1.0.0",
+  "status": "Enterprise-Grade, Immutable-by-Default, Auditable",
+  "repository_url": "https://github.com/kernel-spec/ai-portfolio-builder",
+  "created_date": "2026-02-11T00:45:02Z",
+  "last_updated": "2026-02-12T00:21:31Z",
+  "structure": {
+    "overview": {
+      "total_domains": 10,
+      "total_archetypes": 4,
+      "total_prompts": 14,
+      "total_protocols": 4,
+      "governance_enabled": true
+    },
+    "directories": {
+      "domains": {
+        "path": "/domains",
+        "description": "Domain atom system prompts (10 files)",
+        "files": [
+          "domain-01-content.system.prompt.md",
+          "domain-02-analysis.system.prompt.md",
+          "domain-03-project-management.system.prompt.md",
+          "domain-04-marketing.system.prompt.md",
+          "domain-05-product.system.prompt.md",
+          "domain-06-education.system.prompt.md",
+          "domain-07-personal.system.prompt.md",
+          "domain-08-business.system.prompt.md",
+          "domain-09-technical.system.prompt.md",
+          "domain-10-communication.system.prompt.md"
+        ]
+      },
+      "archetypes": {
+        "path": "/archetypes",
+        "description": "Archetype composition system prompts (4 files)",
+        "files": [
+          "product-thinker.system.prompt.md",
+          "growth-operator.system.prompt.md",
+          "learning-designer.system.prompt.md",
+          "delivery-planner.system.prompt.md"
+        ]
+      },
+      "versions": {
+        "path": "/versions",
+        "description": "Governance and version control",
+        "files": [
+          "prompt-manifest.json",
+          "prompt-lock.json"
+        ]
+      },
+      "protocols": {
+        "path": "/protocols",
+        "description": "Governance protocols",
+        "files": [
+          "handoff.schema.md",
+          "response.schema.md",
+          "orchestration.rules.md",
+          "refusal.rules.md"
+        ]
+      },
+      "cloudflare-worker": {
+        "path": "/cloudflare-worker",
+        "description": "Runtime verification worker",
+        "files": [
+          "index.js",
+          "prompt-lock.json",
+          "wrangler.toml",
+          "dispatcher.contract.md"
+        ]
+      },
+      "openai-custom-gpts": {
+        "path": "/openai-custom-gpts",
+        "description": "OpenAI Custom GPT configurations",
+        "subdirectories": {
+          "atoms": {
+            "path": "/openai-custom-gpts/atoms",
+            "description": "Domain configs (10 files)",
+            "file_count": 10
+          },
+          "archetypes": {
+            "path": "/openai-custom-gpts/archetypes",
+            "description": "Archetype configs (4 files)",
+            "file_count": 4
+          },
+          "orchestrator": {
+            "path": "/openai-custom-gpts/orchestrator",
+            "description": "Orchestrator config",
+            "file_count": 1
+          }
+        },
+        "files": [
+          "README.md"
+        ]
+      }
+    },
+    "root_files": [
+      "README.md",
+      "CHANGELOG.md",
+      "SECURITY.md",
+      "GOVERNANCE_AUDIT_REPORT.md",
+      "lio-builder.tar.md"
+    ]
+  },
+  "domains": {
+    "domain-01-content": {
+      "name": "Content Creation",
+      "canonical_id": "domain-01-content",
+      "file": "domains/domain-01-content.system.prompt.md",
+      "scope": "Ideation, creation, editing, and production of content across all formats",
+      "key_activities": ["Writing", "Editing", "Content structure", "Multimedia content development"]
+    },
+    "domain-02-analysis": {
+      "name": "Analysis & Decision Making",
+      "canonical_id": "domain-02-analysis",
+      "file": "domains/domain-02-analysis.system.prompt.md",
+      "scope": "Data analysis, critical thinking, problem-solving, and decision support",
+      "key_activities": ["Data interpretation", "Option evaluation", "Risk assessment", "Decision frameworks"]
+    },
+    "domain-03-project-management": {
+      "name": "Project Management & Planning",
+      "canonical_id": "domain-03-project-management",
+      "file": "domains/domain-03-project-management.system.prompt.md",
+      "scope": "Planning, organizing, scheduling, tracking, and coordinating projects",
+      "key_activities": ["Timeline development", "Resource allocation", "Progress tracking", "Methodology application"]
+    },
+    "domain-04-marketing": {
+      "name": "Marketing & Growth",
+      "canonical_id": "domain-04-marketing",
+      "file": "domains/domain-04-marketing.system.prompt.md",
+      "scope": "Market positioning, customer acquisition, brand development, growth tactics",
+      "key_activities": ["Marketing strategy", "Campaign planning", "Growth experiments", "Positioning"]
+    },
+    "domain-05-product": {
+      "name": "Product & Services",
+      "canonical_id": "domain-05-product",
+      "file": "domains/domain-05-product.system.prompt.md",
+      "scope": "Product vision, feature definition, UX design, product strategy",
+      "key_activities": ["Product roadmaps", "Requirements", "User research", "Feature prioritization"]
+    },
+    "domain-06-education": {
+      "name": "Education & Learning",
+      "canonical_id": "domain-06-education",
+      "file": "domains/domain-06-education.system.prompt.md",
+      "scope": "Curriculum design, instructional methods, learning experiences",
+      "key_activities": ["Course design", "Learning objectives", "Pedagogy", "Assessment design"]
+    },
+    "domain-07-personal": {
+      "name": "Personal Development & Productivity",
+      "canonical_id": "domain-07-personal",
+      "file": "domains/domain-07-personal.system.prompt.md",
+      "scope": "Individual growth, habit formation, time management, goal-setting",
+      "key_activities": ["Personal goals", "Productivity systems", "Habits", "Self-improvement"]
+    },
+    "domain-08-business": {
+      "name": "Business & Strategy",
+      "canonical_id": "domain-08-business",
+      "file": "domains/domain-08-business.system.prompt.md",
+      "scope": "Business models, competitive strategy, organizational planning",
+      "key_activities": ["Business model design", "Strategic planning", "Competitive positioning"]
+    },
+    "domain-09-technical": {
+      "name": "Technical & System Thinking",
+      "canonical_id": "domain-09-technical",
+      "file": "domains/domain-09-technical.system.prompt.md",
+      "scope": "Technical architecture, system design, engineering practices",
+      "key_activities": ["System architecture", "Technical design", "Engineering methodologies"]
+    },
+    "domain-10-communication": {
+      "name": "Communication & Presentation",
+      "canonical_id": "domain-10-communication",
+      "file": "domains/domain-10-communication.system.prompt.md",
+      "scope": "Effective communication, presentation design, public speaking, message delivery",
+      "key_activities": ["Communication strategy", "Presentation design", "Public speaking", "Message delivery"]
+    }
+  },
+  "archetypes": {
+    "product-thinker": {
+      "name": "Product Thinker",
+      "canonical_id": "product-thinker",
+      "file": "archetypes/product-thinker.system.prompt.md",
+      "composition": {
+        "domain-05-product": 50,
+        "domain-02-analysis": 30,
+        "domain-09-technical": 20
+      },
+      "purpose": "Data-informed, technically-feasible product strategy and design"
+    },
+    "growth-operator": {
+      "name": "Growth Operator",
+      "canonical_id": "growth-operator",
+      "file": "archetypes/growth-operator.system.prompt.md",
+      "composition": {
+        "domain-04-marketing": 50,
+        "domain-02-analysis": 30,
+        "domain-03-project-management": 20
+      },
+      "purpose": "Data-driven growth strategy with effective execution"
+    },
+    "learning-designer": {
+      "name": "Learning Designer",
+      "canonical_id": "learning-designer",
+      "file": "archetypes/learning-designer.system.prompt.md",
+      "composition": {
+        "domain-06-education": 50,
+        "domain-01-content": 30,
+        "domain-02-analysis": 20
+      },
+      "purpose": "Effective, engaging, and measurable educational experiences"
+    },
+    "delivery-planner": {
+      "name": "Delivery Planner",
+      "canonical_id": "delivery-planner",
+      "file": "archetypes/delivery-planner.system.prompt.md",
+      "composition": {
+        "domain-03-project-management": 50,
+        "domain-02-analysis": 30,
+        "domain-09-technical": 20
+      },
+      "purpose": "Data-informed, technically-sound project delivery"
+    }
+  },
+  "protocols": {
+    "handoff": {
+      "name": "Agent Handoff Protocol",
+      "file": "protocols/handoff.schema.md",
+      "description": "Defines how agents transfer context and control between each other"
+    },
+    "response": {
+      "name": "Response Format Specification",
+      "file": "protocols/response.schema.md",
+      "description": "Standardized response format for all agents"
+    },
+    "orchestration": {
+      "name": "Orchestration and Governance Rules",
+      "file": "protocols/orchestration.rules.md",
+      "description": "Rules for agent coordination and governance enforcement"
+    },
+    "refusal": {
+      "name": "Refusal Patterns and Boundaries",
+      "file": "protocols/refusal.rules.md",
+      "description": "Defines when and how agents should refuse requests"
+    }
+  },
+  "governance": {
+    "enabled": true,
+    "features": {
+      "immutable_domains": true,
+      "hash_verification_required": true,
+      "version_increment_required": true,
+      "archetype_composition_validation": true,
+      "ci_enforcement": true
+    },
+    "ci_workflows": [
+      "schema-validation.yml",
+      "version-hash-enforcement.yml",
+      "forbidden-file-changes.yml",
+      "archetype-composition-validation.yml"
+    ],
+    "hash_registry": "versions/prompt-lock.json"
+  },
+  "runtime": {
+    "cloudflare_worker": {
+      "enabled": true,
+      "purpose": "Hash verification and dispatch integrity",
+      "file": "cloudflare-worker/index.js",
+      "contract": "cloudflare-worker/dispatcher.contract.md"
+    }
+  },
+  "openai_integration": {
+    "enabled": true,
+    "custom_gpts": {
+      "total": 15,
+      "atoms": 10,
+      "archetypes": 4,
+      "orchestrator": 1
+    },
+    "setup_guide": "openai-custom-gpts/README.md"
+  },
+  "documentation": {
+    "readme": "README.md",
+    "changelog": "CHANGELOG.md",
+    "security": "SECURITY.md",
+    "governance_audit": "GOVERNANCE_AUDIT_REPORT.md"
+  },
+  "key_features": [
+    "10 canonical domain atoms with strict boundaries",
+    "4 composed archetypes for specific use cases",
+    "Cryptographic hash verification for prompts",
+    "CI/CD governance enforcement",
+    "Runtime verification via Cloudflare Worker",
+    "OpenAI Custom GPT configurations",
+    "Complete audit trail and version control",
+    "Immutable-by-default architecture"
+  ],
+  "usage": {
+    "for_users": [
+      "Browse domain definitions",
+      "Choose appropriate agent (domain atom or archetype)",
+      "Verify hash from versions/prompt-lock.json",
+      "Deploy with hash verification enabled"
+    ],
+    "for_developers": [
+      "Clone repository",
+      "Review governance protocols",
+      "Check manifest at versions/prompt-manifest.json",
+      "Follow governance rules when making changes"
+    ]
+  },
+  "license": "See repository for license information",
+  "contributing": "Follow governance rules in protocols/orchestration.rules.md"
+}

@@ -1,34 +1,38 @@
-name = "ai-portfolio-builder-prompt-dispatcher"
+name = "ai-portfolio-builder"
 main = "index.js"
 
+# Use latest stable runtime compatibility
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Deploy to workers.dev (no custom domain required)
 workers_dev = true
 
-########################################
-# CI-First Deployment
-########################################
-# account_id NOT required when deploying via GitHub Action
-# using CLOUDFLARE_API_TOKEN
+# Account configuration (auto-detected via API token in CI)
+# account_id is NOT required if using wrangler-action with API token
 
 ########################################
-# Production Environment
+# Environment Configuration
 ########################################
 
 [env.production]
 workers_dev = true
 
 ########################################
-# Security & Limits
+# Security & Governance
 ########################################
 
-# Fail-closed minimal CPU allocation
-limits = { cpu_ms = 50 }
+# Fail closed if no matching route
+# (Worker must explicitly handle all routes in index.js)
 
 ########################################
-# Observability
+# Future Secret Bindings (Optional)
 ########################################
 
-[observability]
-enabled = true
+# Example:
+# [vars]
+# ENVIRONMENT = "production"
+
+# Secrets are set via 'wrangler secret put <KEY>' or GitHub Actions
+# They are NOT declared in this file
+# Example: wrangler secret put OPENAI_API_KEY

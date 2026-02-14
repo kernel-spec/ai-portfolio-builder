@@ -329,7 +329,7 @@ This proves the tests are **not superficial** and catch real security mutations.
 - Test 22: Invalid body types fail-closed
 - Test 23: Hash format mutations
 
-**Total: 464 lines of new test code**
+**Total: 311 lines of new test code**
 
 ---
 

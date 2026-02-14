@@ -2,7 +2,7 @@
  * Cloudflare Worker: Prompt Dispatcher with Strict Fail-Closed Enforcement
  */
 
-import promptLock from './prompt-lock.json';
+import promptLock from './prompt-lock.json' with { type: 'json' };
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',

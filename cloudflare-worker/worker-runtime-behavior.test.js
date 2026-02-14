@@ -360,6 +360,315 @@ describe('Cloudflare Worker Runtime Behavior Tests', () => {
       'Response should include Content-Type header'
     );
   });
+
+  // ============================================================
+  // 🔒 MUTATION RESISTANCE HARDENING TESTS
+  // ============================================================
+  
+  // ============================================================
+  // TEST 16: Hash bypass structure validation (ENHANCED)
+  // ============================================================
+  test('Hash bypass - validates full error structure and prevents success path leak', async () => {
+    const validAgent = getValidAgent();
+    const wrongHash = 'a'.repeat(64); // 64 'a' characters - wrong hash
+    
+    const body = JSON.stringify({
+      agent_id: validAgent.agent_id,
+      prompt_hash: wrongHash
+    });
+    
+    const request = createRequest('POST', 'https://example.com/', body);
+    const response = await worker.fetch(request);
+    
+    // Status code validation
+    assert.strictEqual(response.status, 403, 'Should return 403 for wrong hash');
+    
+    const data = await response.json();
+    
+    // Error structure validation
+    assert.ok(data.error, 'Response must contain error field');
+    assert.match(data.error, /Hash verification failed/i, 'Error must mention hash verification');
+    assert.match(data.error, new RegExp(validAgent.agent_id), 'Error must include agent_id');
+    
+    // Security flag validation
+    assert.strictEqual(data.security_flag, true, 'Must set security_flag to true');
+    
+    // Details validation - must include expected and received hashes
+    assert.ok(data.details, 'Response must contain details object');
+    assert.strictEqual(data.details.reason, 'hash_mismatch', 'Details must specify hash_mismatch reason');
+    assert.strictEqual(data.details.expected_hash, validAgent.prompt_hash, 'Details must contain correct expected_hash');
+    assert.strictEqual(data.details.received_hash, wrongHash, 'Details must contain received_hash');
+    
+    // Success path MUST NOT be present
+    assert.strictEqual(data.success, undefined, 'Must NOT have success field in error response');
+    assert.strictEqual(data.verified, undefined, 'Must NOT have verified field in error response');
+    assert.strictEqual(data.dispatch_id, undefined, 'Must NOT have dispatch_id in error response');
+    assert.strictEqual(data.message, undefined, 'Must NOT have success message in error response');
+    
+    // Agent data MUST NOT be in error response
+    assert.strictEqual(data.agent, undefined, 'Must NOT have agent object in error response');
+  });
+  
+  // ============================================================
+  // TEST 17: Strict error body validation for unknown agent
+  // ============================================================
+  test('Unknown agent - validates complete error structure', async () => {
+    const unknownAgentId = 'totally-unknown-agent-12345';
+    const body = JSON.stringify({
+      agent_id: unknownAgentId,
+      prompt_hash: 'a'.repeat(64)
+    });
+    
+    const request = createRequest('POST', 'https://example.com/', body);
+    const response = await worker.fetch(request);
+    
+    assert.strictEqual(response.status, 403, 'Should return 403 for unknown agent');
+    
+    const data = await response.json();
+    
+    // Full error structure validation
+    assert.ok(data.error, 'Must contain error field');
+    assert.match(data.error, new RegExp(unknownAgentId), 'Error must include the unknown agent_id');
+    assert.strictEqual(data.security_flag, true, 'Must set security_flag for unknown agent');
+    
+    // Details validation
+    assert.ok(data.details, 'Must contain details object');
+    assert.strictEqual(data.details.reason, 'unknown_agent', 'Details must specify unknown_agent reason');
+    
+    // No hash information should leak for unknown agents
+    assert.strictEqual(data.details.expected_hash, undefined, 'Should NOT leak expected_hash for unknown agent');
+    
+    // No success path fields
+    assert.strictEqual(data.success, undefined, 'Must NOT have success field');
+    assert.strictEqual(data.verified, undefined, 'Must NOT have verified field');
+    assert.strictEqual(data.dispatch_id, undefined, 'Must NOT have dispatch_id');
+  });
+  
+  // ============================================================
+  // TEST 18: Lock file runtime consistency test
+  // ============================================================
+  test('Lock file consistency - returned hash matches lock file exactly', async () => {
+    // Select a specific known agent from lock file
+    const testAgentId = 'domain-01-content';
+    const lockFileAgent = promptLock.prompts[testAgentId];
+    
+    assert.ok(lockFileAgent, 'Test agent must exist in lock file');
+    assert.ok(lockFileAgent.hash, 'Test agent must have hash in lock file');
+    
+    const body = JSON.stringify({
+      agent_id: testAgentId,
+      prompt_hash: lockFileAgent.hash
+    });
+    
+    const request = createRequest('POST', 'https://example.com/', body);
+    const response = await worker.fetch(request);
+    
+    assert.strictEqual(response.status, 200, 'Should return 200 for valid request');
+    
+    const data = await response.json();
+    
+    // Verify the response includes the exact hash from lock file
+    assert.ok(data.agent, 'Response must contain agent object');
+    assert.ok(data.agent.hash, 'Agent object must contain hash field');
+    
+    // CRITICAL: Hash in response must EXACTLY match lock file
+    assert.strictEqual(
+      data.agent.hash, 
+      lockFileAgent.hash, 
+      'Returned hash must exactly match lock file hash - no mutations allowed'
+    );
+    
+    // Also verify other lock file fields match
+    assert.strictEqual(data.agent.type, lockFileAgent.type, 'Agent type must match lock file');
+    assert.strictEqual(data.agent.version, lockFileAgent.version, 'Agent version must match lock file');
+    
+    // Verify hash is not modified or stale
+    assert.strictEqual(data.agent.hash.length, 64, 'Hash must be 64 characters (SHA-256)');
+    assert.match(data.agent.hash, /^[a-f0-9]{64}$/, 'Hash must be valid hex string');
+  });
+  
+  // ============================================================
+  // TEST 19: Success path integrity test (COMPREHENSIVE)
+  // ============================================================
+  test('Success path - validates complete success response structure', async () => {
+    const validAgent = getValidAgent();
+    const body = JSON.stringify({
+      agent_id: validAgent.agent_id,
+      prompt_hash: validAgent.prompt_hash
+    });
+    
+    const request = createRequest('POST', 'https://example.com/', body);
+    const response = await worker.fetch(request);
+    
+    assert.strictEqual(response.status, 200, 'Should return 200 for valid request');
+    
+    const data = await response.json();
+    
+    // Use deepStrictEqual for structure validation
+    const requiredFields = ['success', 'verified', 'message', 'dispatch_id', 'agent', 'timestamp'];
+    for (const field of requiredFields) {
+      assert.ok(data[field] !== undefined, `Response must contain ${field} field`);
+    }
+    
+    // Validate exact values and types
+    assert.strictEqual(data.success, true, 'success must be exactly true');
+    assert.strictEqual(data.verified, true, 'verified must be exactly true');
+    assert.strictEqual(
+      data.message, 
+      'Prompt integrity verified. Ready for dispatch.', 
+      'Message must match exact expected text'
+    );
+    
+    // Validate dispatch_id
+    assert.ok(data.dispatch_id, 'dispatch_id must exist');
+    assert.match(data.dispatch_id, /^[a-f0-9-]{36}$/, 'dispatch_id must be valid UUID format');
+    
+    // Validate agent object structure
+    assert.ok(data.agent, 'agent object must exist');
+    assert.strictEqual(data.agent.agent_id, validAgent.agent_id, 'agent.agent_id must match');
+    assert.ok(data.agent.type, 'agent.type must exist');
+    assert.ok(data.agent.version, 'agent.version must exist');
+    assert.ok(data.agent.hash, 'agent.hash must exist in success response');
+    
+    // Validate timestamp
+    assert.ok(data.timestamp, 'timestamp must exist');
+    assert.match(data.timestamp, /^\d{4}-\d{2}-\d{2}T/, 'timestamp must be ISO 8601 format');
+    
+    // Ensure NO error fields in success response
+    assert.strictEqual(data.error, undefined, 'Must NOT have error field in success response');
+    assert.strictEqual(data.security_flag, undefined, 'Must NOT have security_flag in success response');
+    assert.strictEqual(data.details, undefined, 'Must NOT have details field in success response');
+  });
+  
+  // ============================================================
+  // TEST 20: Fail-closed guard - empty JSON
+  // ============================================================
+  test('Fail-closed - empty JSON body returns error, never 200', async () => {
+    const body = JSON.stringify({});
+    
+    const request = createRequest('POST', 'https://example.com/', body);
+    const response = await worker.fetch(request);
+    
+    // Must be error status, NEVER 200
+    assert.notStrictEqual(response.status, 200, 'Empty JSON must NEVER return 200');
+    assert.ok(
+      response.status === 400 || response.status === 403, 
+      'Empty JSON must return 400 or 403'
+    );
+    
+    const data = await response.json();
+    
+    // Must have error
+    assert.ok(data.error, 'Empty JSON must return error message');
+    
+    // Must NOT have success fields
+    assert.notStrictEqual(data.success, true, 'Must NOT indicate success for empty JSON');
+    assert.strictEqual(data.verified, undefined, 'Must NOT have verified field');
+    assert.strictEqual(data.dispatch_id, undefined, 'Must NOT have dispatch_id');
+  });
+  
+  // ============================================================
+  // TEST 21: Fail-closed guard - missing prompt_hash
+  // ============================================================
+  test('Fail-closed - valid agent_id but missing prompt_hash returns 400', async () => {
+    const validAgent = getValidAgent();
+    const body = JSON.stringify({
+      agent_id: validAgent.agent_id
+      // prompt_hash intentionally missing
+    });
+    
+    const request = createRequest('POST', 'https://example.com/', body);
+    const response = await worker.fetch(request);
+    
+    // Must be 400 for validation failure
+    assert.strictEqual(response.status, 400, 'Missing prompt_hash must return 400');
+    
+    const data = await response.json();
+    
+    // Must have error
+    assert.ok(data.error, 'Must return error message');
+    
+    // Must NOT succeed even with valid agent_id
+    assert.notStrictEqual(data.success, true, 'Must NOT succeed with missing hash');
+    assert.strictEqual(data.verified, undefined, 'Must NOT be verified');
+    assert.strictEqual(data.dispatch_id, undefined, 'Must NOT have dispatch_id');
+  });
+  
+  // ============================================================
+  // TEST 22: Fail-closed guard - completely invalid body types
+  // ============================================================
+  test('Fail-closed - validates various invalid body types never return 200', async () => {
+    const invalidBodies = [
+      'just a string',
+      '12345',
+      'true',
+      'null',
+      'undefined',
+    ];
+    
+    for (const invalidBody of invalidBodies) {
+      const request = createRequest('POST', 'https://example.com/', invalidBody);
+      const response = await worker.fetch(request);
+      
+      // Must NEVER return 200 for invalid bodies
+      assert.notStrictEqual(
+        response.status, 
+        200, 
+        `Invalid body "${invalidBody}" must NEVER return 200`
+      );
+      
+      const data = await response.json();
+      
+      // Must have error
+      assert.ok(data.error, `Invalid body "${invalidBody}" must return error`);
+      
+      // Must NOT have success indicators
+      assert.notStrictEqual(
+        data.success, 
+        true, 
+        `Invalid body "${invalidBody}" must NOT indicate success`
+      );
+    }
+  });
+  
+  // ============================================================
+  // TEST 23: Hash format mutation resistance
+  // ============================================================
+  test('Hash format validation - prevents various hash format mutations', async () => {
+    const validAgent = getValidAgent();
+    const invalidHashes = [
+      'short',                          // Too short
+      'Z'.repeat(64),                   // Invalid characters
+      validAgent.prompt_hash.toUpperCase(), // Wrong case (if case-sensitive)
+      validAgent.prompt_hash + 'extra', // Too long
+      validAgent.prompt_hash.slice(0, 63), // One character short
+    ];
+    
+    for (const invalidHash of invalidHashes) {
+      const body = JSON.stringify({
+        agent_id: validAgent.agent_id,
+        prompt_hash: invalidHash
+      });
+      
+      const request = createRequest('POST', 'https://example.com/', body);
+      const response = await worker.fetch(request);
+      
+      // Must NOT return 200 for invalid hash formats
+      assert.notStrictEqual(
+        response.status,
+        200,
+        `Invalid hash format must not return 200: ${invalidHash.substring(0, 20)}...`
+      );
+      
+      const data = await response.json();
+      
+      // Must have error or security flag
+      assert.ok(
+        data.error || data.security_flag,
+        `Invalid hash must trigger error: ${invalidHash.substring(0, 20)}...`
+      );
+    }
+  });
 });
 
 console.log('\n✓ All runtime behavior tests completed successfully!');

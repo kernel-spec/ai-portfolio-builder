@@ -5,13 +5,27 @@
  * Quick health check for the AI Portfolio Builder deployment.
  * Run this before any production deployment to verify system integrity.
  * 
- * Usage: node validate-system.js
+ * Usage: 
+ *   node validate-system.js
+ * 
+ * Note: Must be run from the repository root directory.
+ *       The script uses process.cwd() to locate files.
+ * 
+ * Examples:
+ *   # From repository root
+ *   cd /path/to/ai-portfolio-builder
+ *   node validate-system.js
+ * 
+ *   # Using absolute path from anywhere
+ *   cd /path/to/ai-portfolio-builder
+ *   node /absolute/path/to/validate-system.js
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const BASE_PATH = '/home/runner/work/ai-portfolio-builder/ai-portfolio-builder';
+// Use current working directory (must be repository root)
+const BASE_PATH = process.cwd();
 
 // ANSI colors
 const GREEN = '\x1b[32m';

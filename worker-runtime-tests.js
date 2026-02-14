@@ -31,58 +31,14 @@ class WorkerRuntimeTests {
   }
 
   /**
-   * Load and prepare the worker code for testing
-   * We need to simulate the Cloudflare Worker environment
+   * Load worker code for static analysis
+   * Note: We perform static analysis, not actual execution
    */
   loadWorkerCode() {
     const workerPath = path.join(process.cwd(), 'cloudflare-worker/index.js');
     const workerCode = fs.readFileSync(workerPath, 'utf8');
     
-    // Transform ES module to something we can test
-    // Replace import with require (for Node.js testing)
-    const transformedCode = workerCode
-      .replace(/import\s+(\w+)\s+from\s+['"](.+)['"]/g, "const $1 = require('$2')")
-      .replace(/export\s+default/, 'module.exports =');
-    
-    return { original: workerCode, transformed: transformedCode };
-  }
-
-  /**
-   * Create a mock Request object that mimics Cloudflare's Request
-   */
-  createMockRequest(method, url, body = null, headers = {}) {
-    const mockHeaders = new Map(Object.entries(headers));
-    
-    return {
-      method,
-      url,
-      headers: {
-        get: (key) => mockHeaders.get(key),
-        has: (key) => mockHeaders.has(key)
-      },
-      json: async () => {
-        if (!body) {
-          throw new Error('No body provided');
-        }
-        if (typeof body === 'string') {
-          return JSON.parse(body);
-        }
-        return body;
-      }
-    };
-  }
-
-  /**
-   * Mock Response class for tests
-   */
-  createMockResponse(body, options = {}) {
-    return {
-      status: options.status || 200,
-      headers: options.headers || {},
-      body: body,
-      json: async () => JSON.parse(body),
-      text: async () => body
-    };
+    return { original: workerCode };
   }
 
   /**
@@ -158,8 +114,10 @@ class WorkerRuntimeTests {
     this.assert(has400Response, 'Returns 400 on invalid input');
 
     // Check that success requires verification
-    const successAfterVerification = original.indexOf('verifyPromptHash') < 
-                                     original.indexOf('success: true');
+    const verifyIndex = original.indexOf('verifyPromptHash');
+    const successIndex = original.indexOf('success: true');
+    const successAfterVerification = verifyIndex !== -1 && successIndex !== -1 && 
+                                     verifyIndex < successIndex;
     this.assert(successAfterVerification, 'Success response follows hash verification');
   }
 
@@ -380,8 +338,8 @@ class WorkerRuntimeTests {
       const wranglerPath = path.join(process.cwd(), 'cloudflare-worker/wrangler.toml');
       const wranglerContent = fs.readFileSync(wranglerPath, 'utf8');
 
-      const workflowAccount = workflowContent.match(/accountId:\s*([a-f0-9]+)/);
-      const wranglerAccount = wranglerContent.match(/account_id\s*=\s*"([a-f0-9]+)"/);
+      const workflowAccount = workflowContent.match(/accountId:\s*([a-fA-F0-9]+)/);
+      const wranglerAccount = wranglerContent.match(/account_id\s*=\s*"([a-fA-F0-9]+)"/);
 
       const accountsMatch = workflowAccount && wranglerAccount &&
                            workflowAccount[1] === wranglerAccount[1];

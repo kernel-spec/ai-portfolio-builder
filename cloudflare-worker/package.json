@@ -1,1 +1,8 @@
-//
+{
+  "name": "ai-portfolio-builder-worker",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test worker-runtime-behavior.test.js"
+  }
+}

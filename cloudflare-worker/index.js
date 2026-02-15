@@ -2,7 +2,7 @@
  * Cloudflare Worker: Prompt Dispatcher with Strict Fail-Closed Enforcement
  */
 
-import promptLock from './prompt-lock.json';
+import promptLock from './prompt-lock.json' with { type: 'json' };
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
@@ -71,8 +71,9 @@ export default {
     if (!hashCheck.valid) {
       return jsonResponse(
         {
-          error: 'Hash verification failed.',
+          error: `Hash verification failed for agent_id: ${body.agent_id}`,
           security_flag: true,
+          details: hashCheck.details || {},
         },
         403
       );
@@ -94,11 +95,13 @@ export default {
       {
         success: true,
         verified: true,
+        message: 'Prompt integrity verified. Ready for dispatch.',
         dispatch_id: dispatchId,
         agent: {
           agent_id: body.agent_id,
           type: hashCheck.agent.type,
           version: hashCheck.agent.version,
+          hash: hashCheck.agent.hash,
         },
         timestamp: new Date().toISOString(),
       },
@@ -154,11 +157,23 @@ function verifyPromptHash(agentId, promptHash) {
   const agent = promptLock.prompts?.[agentId];
 
   if (!agent) {
-    return { valid: false };
+    return { 
+      valid: false,
+      details: {
+        reason: 'unknown_agent'
+      }
+    };
   }
 
   if (agent.hash !== promptHash) {
-    return { valid: false };
+    return { 
+      valid: false,
+      details: {
+        reason: 'hash_mismatch',
+        expected_hash: agent.hash,
+        received_hash: promptHash
+      }
+    };
   }
 
   return {
@@ -167,6 +182,7 @@ function verifyPromptHash(agentId, promptHash) {
       type: agent.type,
       version: agent.version,
       file: agent.file,
+      hash: agent.hash,
     },
   };
 }

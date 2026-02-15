@@ -4,7 +4,7 @@
  * Mode: Strict Fail-Closed Governance Enforcement
  */
 
-import promptLock from './prompt-lock.json' with { type: 'json' };
+import promptLock from './prompt-lock.json';
 
 // --------------------------------------------------
 // HEADERS
@@ -27,7 +27,8 @@ const CORS_HEADERS = {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    const { method, pathname } = url;
+    const { pathname } = url;
+    const { method } = request;
 
     // CORS preflight
     if (method === 'OPTIONS') {

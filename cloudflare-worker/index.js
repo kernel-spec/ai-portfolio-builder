@@ -1,12 +1,13 @@
 /**
- * Cloudflare Worker: Prompt Dispatcher with Strict Fail-Closed Enforcement
+ * Cloudflare Worker
+ * - Prompt Lock Verification (fail-closed)
+ * - Secure OpenAI Proxy (/api/chat)
+ * - Health endpoint
  */
 
 import promptLock from './prompt-lock.json';
 
-const JSON_HEADERS = {
-  'Content-Type': 'application/json',
-};
+const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -15,117 +16,180 @@ const CORS_HEADERS = {
 };
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
 
-    // Handle CORS preflight
+    const url = new URL(request.url);
+
+    // ---------------- CORS ----------------
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
     }
 
-    // Health endpoint
-    if (request.method === 'GET' && new URL(request.url).pathname === '/health') {
+    // ---------------- HEALTH ----------------
+    if (request.method === 'GET' && url.pathname === '/health') {
       return handleHealthCheck();
     }
 
-    // Enforce POST only
-    if (request.method !== 'POST') {
-      return jsonResponse(
-        { error: 'Method not allowed. Use POST.' },
-        405
-      );
+    // ---------------- CHAT PROXY ----------------
+    if (request.method === 'POST' && url.pathname === '/api/chat') {
+      return handleChatProxy(request, env);
     }
 
-    // -------- STRICT JSON PARSING --------
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return jsonResponse(
-        { error: 'Invalid JSON body.' },
-        400
-      );
+    // ---------------- PROMPT DISPATCH ----------------
+    if (request.method === 'POST' && url.pathname === '/api/dispatch') {
+      return handlePromptDispatch(request);
     }
 
-    // Ensure body is object
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      return jsonResponse(
-        { error: 'Invalid request body structure.' },
-        400
-      );
-    }
-
-    // -------- VALIDATION --------
-    const validation = validateRequest(body);
-    if (!validation.valid) {
-      return jsonResponse(
-        {
-          error: 'Invalid request.',
-          details: validation.errors,
-        },
-        400
-      );
-    }
-
-    // -------- HASH VERIFICATION --------
-    const hashCheck = verifyPromptHash(body.agent_id, body.prompt_hash);
-    if (!hashCheck.valid) {
-      return jsonResponse(
-        {
-          error: `Hash verification failed for agent_id: ${body.agent_id}`,
-          security_flag: true,
-          details: hashCheck.details || {},
-        },
-        403
-      );
-    }
-
-    // -------- SUCCESS --------
-    const dispatchId = body.request_id || crypto.randomUUID();
-
-    console.log(
-      JSON.stringify({
-        event: 'dispatch_verified',
-        agent_id: body.agent_id,
-        dispatch_id: dispatchId,
-        timestamp: new Date().toISOString(),
-      })
-    );
-
-    return jsonResponse(
-      {
-        success: true,
-        verified: true,
-        message: 'Prompt integrity verified. Ready for dispatch.',
-        dispatch_id: dispatchId,
-        agent: {
-          agent_id: body.agent_id,
-          type: hashCheck.agent.type,
-          version: hashCheck.agent.version,
-          hash: hashCheck.agent.hash,
-        },
-        timestamp: new Date().toISOString(),
-      },
-      200
-    );
+    return jsonResponse({ error: 'Not found.' }, 404);
   },
 };
 
-/**
- * Strict JSON response helper
- */
-function jsonResponse(payload, status) {
-  return new Response(
-    JSON.stringify(payload),
-    {
-      status,
-      headers: { ...JSON_HEADERS, ...CORS_HEADERS },
+/* ============================================================
+   CHAT PROXY (Custom GPT → Worker → OpenAI)
+============================================================ */
+
+async function handleChatProxy(request, env) {
+  if (!env.OPENAI_API_KEY) {
+    return jsonResponse(
+      { error: 'OPENAI_API_KEY not configured.' },
+      500
+    );
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body.' }, 400);
+  }
+
+  if (!body.messages || !Array.isArray(body.messages)) {
+    return jsonResponse(
+      { error: 'messages array required.' },
+      400
+    );
+  }
+
+  try {
+    const openaiResponse = await fetch(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: body.messages,
+          temperature: 0.3,
+        }),
+      }
+    );
+
+    const data = await openaiResponse.json();
+
+    if (!openaiResponse.ok) {
+      return jsonResponse(
+        {
+          error: 'OpenAI request failed.',
+          details: data,
+        },
+        openaiResponse.status
+      );
     }
+
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { ...JSON_HEADERS, ...CORS_HEADERS },
+    });
+
+  } catch (err) {
+    return jsonResponse(
+      { error: 'OpenAI proxy error.' },
+      500
+    );
+  }
+}
+
+/* ============================================================
+   PROMPT LOCK DISPATCH (Fail-Closed Governance)
+============================================================ */
+
+async function handlePromptDispatch(request) {
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body.' }, 400);
+  }
+
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return jsonResponse(
+      { error: 'Invalid request body structure.' },
+      400
+    );
+  }
+
+  const validation = validateRequest(body);
+  if (!validation.valid) {
+    return jsonResponse(
+      {
+        error: 'Invalid request.',
+        details: validation.errors,
+      },
+      400
+    );
+  }
+
+  const hashCheck = verifyPromptHash(body.agent_id, body.prompt_hash);
+
+  if (!hashCheck.valid) {
+    return jsonResponse(
+      {
+        error: `Hash verification failed for agent_id: ${body.agent_id}`,
+        security_flag: true,
+        details: hashCheck.details || {},
+      },
+      403
+    );
+  }
+
+  const dispatchId = body.request_id || crypto.randomUUID();
+
+  console.log(
+    JSON.stringify({
+      event: 'dispatch_verified',
+      agent_id: body.agent_id,
+      dispatch_id: dispatchId,
+      timestamp: new Date().toISOString(),
+    })
+  );
+
+  return jsonResponse(
+    {
+      success: true,
+      verified: true,
+      dispatch_id: dispatchId,
+      agent: hashCheck.agent,
+      timestamp: new Date().toISOString(),
+    },
+    200
   );
 }
 
-/**
- * Validate request schema
- */
+/* ============================================================
+   HELPERS
+============================================================ */
+
+function jsonResponse(payload, status) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...JSON_HEADERS, ...CORS_HEADERS },
+  });
+}
+
 function validateRequest(body) {
   const errors = [];
 
@@ -150,29 +214,24 @@ function validateRequest(body) {
   };
 }
 
-/**
- * Verify prompt hash against lock file
- */
 function verifyPromptHash(agentId, promptHash) {
   const agent = promptLock.prompts?.[agentId];
 
   if (!agent) {
-    return { 
+    return {
       valid: false,
-      details: {
-        reason: 'unknown_agent'
-      }
+      details: { reason: 'unknown_agent' },
     };
   }
 
   if (agent.hash !== promptHash) {
-    return { 
+    return {
       valid: false,
       details: {
         reason: 'hash_mismatch',
         expected_hash: agent.hash,
-        received_hash: promptHash
-      }
+        received_hash: promptHash,
+      },
     };
   }
 
@@ -187,15 +246,12 @@ function verifyPromptHash(agentId, promptHash) {
   };
 }
 
-/**
- * Health endpoint
- */
 function handleHealthCheck() {
   return new Response(
     JSON.stringify({
       status: 'healthy',
-      service: 'prompt-dispatcher',
-      version: '1.0.0',
+      service: 'ai-portfolio-backend',
+      version: '2.0.0',
       lock_file_version: promptLock.version,
       prompts_count: Object.keys(promptLock.prompts || {}).length,
       timestamp: new Date().toISOString(),

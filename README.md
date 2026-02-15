@@ -26,9 +26,29 @@ The taxonomy consists of:
 
 ### For Developers
 1. **Clone Repository**: `git clone https://github.com/kernel-spec/ai-portfolio-builder.git`
-2. **Review Governance**: Read `protocols/orchestration.rules.md`
-3. **Check Manifest**: See `versions/prompt-manifest.json` for all agents
-4. **Make Changes**: Follow governance rules (see Contributing)
+2. **Install Dependencies**: `npm install` (optional, for npm scripts)
+3. **Review Governance**: Read `protocols/orchestration.rules.md`
+4. **Check Manifest**: See `versions/prompt-manifest.json` for all agents
+5. **Validate System**: Run `npm run validate:all` to check integrity
+6. **Make Changes**: Follow governance rules (see Contributing)
+
+### Validation Tools
+
+The repository includes several validation tools to ensure governance compliance:
+
+- **`git-diff-validator.js`**: Validates changes to versions/, domains/, and archetypes/
+  - Usage: `npm run validate:diff` or `node git-diff-validator.js`
+  - See [VALIDATOR_GUIDE.md](VALIDATOR_GUIDE.md) for details
+
+- **`validate-system.js`**: System-wide integrity check
+  - Usage: `npm run validate:system` or `node validate-system.js`
+  - Validates file existence, JSON syntax, and lock file synchronization
+
+- **`meta-validation.js`**: Meta-validator for test suite quality
+  - Usage: `npm run validate:meta` or `node meta-validation.js`
+  - Assesses validation coverage and test quality
+
+Run all validations: `npm run validate:all`
 
 ## Repository Structure
 
@@ -315,12 +335,16 @@ Before using any prompt:
 ### For Prompt Changes
 
 1. **Modify Prompt File**: Update domain or archetype prompt
-2. **Recalculate Hash**: `sha256sum <file>`
-3. **Update Lock File**: Update hash in `versions/prompt-lock.json`
-4. **Update Manifest**: Increment version if needed
-5. **Document Change**: Add entry to `CHANGELOG.md`
-6. **Test**: Ensure all CI workflows pass
-7. **Submit PR**: Include justification for change
+2. **Validate Changes**: `npm run validate:diff` to check for hash mismatches
+3. **Recalculate Hash**: `sha256sum <file>` (or `shasum -a 256 <file>` on macOS)
+4. **Update Lock File**: Update hash in `versions/prompt-lock.json`
+5. **Update Manifest**: Increment version if needed
+6. **Document Change**: Add entry to `CHANGELOG.md`
+7. **Validate Again**: Run `npm run validate:diff` to confirm fixes
+8. **Test**: Ensure all CI workflows pass
+9. **Submit PR**: Include justification for change
+
+See [VALIDATOR_GUIDE.md](VALIDATOR_GUIDE.md) for detailed validation instructions.
 
 ### For New Archetypes
 
@@ -328,9 +352,10 @@ Before using any prompt:
 2. **Create Prompt File**: Follow archetype template
 3. **Update Manifest**: Add to `versions/prompt-manifest.json`
 4. **Calculate Hash**: Add to `versions/prompt-lock.json`
-5. **Create GPT Config**: Add to `openai-custom-gpts/archetypes/`
-6. **Document**: Update README and CHANGELOG
-7. **Validate**: Ensure composition validation passes
+5. **Validate**: Run `npm run validate:diff` to verify composition and hashes
+6. **Create GPT Config**: Add to `openai-custom-gpts/archetypes/`
+7. **Document**: Update README and CHANGELOG
+8. **Validate All**: Ensure all composition and hash validation passes
 
 ### Rules for Contributors
 

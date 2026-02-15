@@ -10,7 +10,6 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const BASE_PATH = process.cwd();
-const TEST_DIR = path.join(BASE_PATH, '.test-validator');
 
 // ANSI colors
 const GREEN = '\x1b[32m';

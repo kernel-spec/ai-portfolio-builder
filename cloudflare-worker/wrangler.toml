@@ -1,16 +1,12 @@
 # cloudflare-worker/wrangler.toml
 
-name = "ai-portfolio-builder-prompt-dispatcher"
+name = "ai-portfolio-builder"
 main = "index.js"
-
-# Cloudflare Account
 account_id = "e506d2ef2602866c8b18942256a5b3b2"
 
-# Runtime compatibility
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Deploy to workers.dev (no custom domain)
 workers_dev = true
 
 ############################################################
@@ -18,7 +14,6 @@ workers_dev = true
 ############################################################
 
 [env.production]
-name = "ai-portfolio-builder-prompt-dispatcher-prod"
 workers_dev = true
 
 ############################################################

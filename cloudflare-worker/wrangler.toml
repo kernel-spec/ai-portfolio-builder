@@ -10,12 +10,19 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 ############################################################
+# ENVIRONMENTS
+############################################################
+
+[env.production]
+workers_dev = true
+
+############################################################
 # DEPLOYMENT MODEL
 ############################################################
 
-# - Production branch (main) → deployed via Cloudflare Git integration
-# - Other branches → uploaded as preview versions
-# - No routes defined → workers.dev only
+# Production branch (main) → deployed via Cloudflare Git integration
+# Other branches → uploaded as preview versions
+# No routes defined → workers.dev only
 
 ############################################################
 # OPTIONAL: Variables (future)

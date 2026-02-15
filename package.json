@@ -1,0 +1,30 @@
+{
+  "name": "ai-portfolio-builder",
+  "version": "1.0.0",
+  "description": "10-Domain Canonical Taxonomy for AI System Prompts",
+  "main": "index.js",
+  "scripts": {
+    "validate:system": "node validate-system.js",
+    "validate:diff": "node git-diff-validator.js",
+    "validate:meta": "node meta-validation.js",
+    "validate:all": "npm run validate:system && npm run validate:diff",
+    "test:worker": "node worker-runtime-tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kernel-spec/ai-portfolio-builder.git"
+  },
+  "keywords": [
+    "ai",
+    "prompts",
+    "taxonomy",
+    "governance",
+    "system-prompts"
+  ],
+  "author": "kernel-spec",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/kernel-spec/ai-portfolio-builder/issues"
+  },
+  "homepage": "https://github.com/kernel-spec/ai-portfolio-builder#readme"
+}

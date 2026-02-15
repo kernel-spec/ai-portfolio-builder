@@ -1,0 +1,1 @@
+See production configuration in OpenAI Custom GPT UI. Repository copy for governance traceability.

@@ -4,7 +4,7 @@
  * Mode: Strict Fail-Closed Governance Enforcement
  */
 
-import promptLock from './prompt-lock.json';
+import promptLock from './prompt-lock.json' with { type: 'json' };
 
 // --------------------------------------------------
 // HEADERS
@@ -258,3 +258,14 @@ function verifyPromptHash(agentId, promptHash) {
     },
   };
 }
+
+// --------------------------------------------------
+// NAMED EXPORTS FOR TESTING
+// --------------------------------------------------
+
+export {
+  handleDispatch,
+  verifyPromptHash,
+  validateRequest,
+  methodNotAllowed
+};

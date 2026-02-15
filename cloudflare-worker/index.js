@@ -1,8 +1,14 @@
 /**
- * Cloudflare Worker: Prompt Dispatcher with Strict Fail-Closed Enforcement
+ * Cloudflare Worker: Prompt Dispatcher
+ * Version: 1.2.0
+ * Mode: Strict Fail-Closed Governance Enforcement
  */
 
 import promptLock from './prompt-lock.json';
+
+// --------------------------------------------------
+// HEADERS
+// --------------------------------------------------
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
@@ -14,132 +20,179 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// --------------------------------------------------
+// ENTRYPOINT
+// --------------------------------------------------
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
+    const { method, pathname } = url;
 
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
+    // CORS preflight
+    if (method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
     }
 
-    // ---------------------------
-    // HEALTH ENDPOINT
-    // ---------------------------
-    if (request.method === 'GET' && url.pathname === '/health') {
-      return handleHealthCheck();
+    // Route handling
+    switch (pathname) {
+      case '/health':
+        return method === 'GET'
+          ? handleHealth()
+          : methodNotAllowed();
+
+      case '/manifest':
+        return method === 'GET'
+          ? handleManifest()
+          : methodNotAllowed();
+
+      case '/':
+        return method === 'POST'
+          ? handleDispatch(request)
+          : methodNotAllowed();
+
+      default:
+        return jsonResponse(
+          { error: 'Not found.' },
+          404
+        );
     }
-
-    // ---------------------------
-    // MANIFEST ENDPOINT (NEW)
-    // ---------------------------
-    if (request.method === 'GET' && url.pathname === '/manifest') {
-      return jsonResponse({
-        version: promptLock.version,
-        lockfileVersion: promptLock.lockfileVersion,
-        algorithm: promptLock.algorithm,
-        prompts: promptLock.prompts,
-        integrity: promptLock.integrity,
-        timestamp: new Date().toISOString(),
-      }, 200);
-    }
-
-    // ---------------------------
-    // ENFORCE POST FOR DISPATCH
-    // ---------------------------
-    if (request.method !== 'POST') {
-      return jsonResponse(
-        { error: 'Method not allowed. Use POST.' },
-        405
-      );
-    }
-
-    // -------- STRICT JSON PARSING --------
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return jsonResponse(
-        { error: 'Invalid JSON body.' },
-        400
-      );
-    }
-
-    // Ensure body is object
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      return jsonResponse(
-        { error: 'Invalid request body structure.' },
-        400
-      );
-    }
-
-    // -------- VALIDATION --------
-    const validation = validateRequest(body);
-    if (!validation.valid) {
-      return jsonResponse(
-        {
-          error: 'Invalid request.',
-          details: validation.errors,
-        },
-        400
-      );
-    }
-
-    // -------- HASH VERIFICATION --------
-    const hashCheck = verifyPromptHash(body.agent_id, body.prompt_hash);
-    if (!hashCheck.valid) {
-      return jsonResponse(
-        {
-          error: `Hash verification failed for agent_id: ${body.agent_id}`,
-          security_flag: true,
-          details: hashCheck.details || {},
-        },
-        403
-      );
-    }
-
-    // -------- SUCCESS --------
-    const dispatchId = body.request_id || crypto.randomUUID();
-
-    console.log(
-      JSON.stringify({
-        event: 'dispatch_verified',
-        agent_id: body.agent_id,
-        dispatch_id: dispatchId,
-        timestamp: new Date().toISOString(),
-      })
-    );
-
-    return jsonResponse(
-      {
-        success: true,
-        verified: true,
-        message: 'Prompt integrity verified. Ready for dispatch.',
-        dispatch_id: dispatchId,
-        agent: {
-          agent_id: body.agent_id,
-          type: hashCheck.agent.type,
-          version: hashCheck.agent.version,
-          hash: hashCheck.agent.hash,
-        },
-        timestamp: new Date().toISOString(),
-      },
-      200
-    );
   },
 };
 
-// ---------------------------
+// --------------------------------------------------
+// ROUTE HANDLERS
+// --------------------------------------------------
+
+async function handleDispatch(request) {
+
+  // Enforce JSON content-type
+  if (!request.headers.get('content-type')?.includes('application/json')) {
+    return jsonResponse(
+      { error: 'Content-Type must be application/json.' },
+      415
+    );
+  }
+
+  let body;
+
+  // Strict JSON parsing
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse(
+      { error: 'Invalid JSON body.' },
+      400
+    );
+  }
+
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return jsonResponse(
+      { error: 'Invalid request body structure.' },
+      400
+    );
+  }
+
+  // Validate schema
+  const validation = validateRequest(body);
+  if (!validation.valid) {
+    return jsonResponse(
+      {
+        error: 'Invalid request.',
+        details: validation.errors,
+      },
+      400
+    );
+  }
+
+  // Hash verification
+  const hashCheck = verifyPromptHash(body.agent_id, body.prompt_hash);
+  if (!hashCheck.valid) {
+    return jsonResponse(
+      {
+        error: `Hash verification failed for agent_id: ${body.agent_id}`,
+        security_flag: true,
+        details: hashCheck.details,
+      },
+      403
+    );
+  }
+
+  const dispatchId = body.request_id || crypto.randomUUID();
+  const timestamp = new Date().toISOString();
+
+  // Audit log
+  console.log(JSON.stringify({
+    event: 'dispatch_verified',
+    agent_id: body.agent_id,
+    dispatch_id: dispatchId,
+    timestamp,
+  }));
+
+  return jsonResponse(
+    {
+      success: true,
+      verified: true,
+      message: 'Prompt integrity verified. Ready for dispatch.',
+      dispatch_id: dispatchId,
+      agent: {
+        agent_id: body.agent_id,
+        type: hashCheck.agent.type,
+        version: hashCheck.agent.version,
+        hash: hashCheck.agent.hash,
+      },
+      timestamp,
+    },
+    200
+  );
+}
+
+function handleManifest() {
+  return jsonResponse(
+    {
+      version: promptLock.version,
+      lockfileVersion: promptLock.lockfileVersion,
+      algorithm: promptLock.algorithm,
+      prompts: promptLock.prompts,
+      integrity: promptLock.integrity,
+      timestamp: new Date().toISOString(),
+    },
+    200
+  );
+}
+
+function handleHealth() {
+  return jsonResponse(
+    {
+      status: 'healthy',
+      service: 'prompt-dispatcher',
+      version: '1.2.0',
+      lock_file_version: promptLock.version,
+      prompts_count: Object.keys(promptLock.prompts || {}).length,
+      timestamp: new Date().toISOString(),
+    },
+    200
+  );
+}
+
+// --------------------------------------------------
 // HELPERS
-// ---------------------------
+// --------------------------------------------------
 
 function jsonResponse(payload, status) {
-  return new Response(
-    JSON.stringify(payload),
-    {
-      status,
-      headers: { ...JSON_HEADERS, ...CORS_HEADERS },
-    }
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      ...JSON_HEADERS,
+      ...CORS_HEADERS,
+    },
+  });
+}
+
+function methodNotAllowed() {
+  return jsonResponse(
+    { error: 'Method not allowed.' },
+    405
   );
 }
 
@@ -180,7 +233,7 @@ function verifyPromptHash(agentId, promptHash) {
   if (!agent) {
     return {
       valid: false,
-      details: { reason: 'unknown_agent' }
+      details: { reason: 'unknown_agent' },
     };
   }
 
@@ -190,8 +243,8 @@ function verifyPromptHash(agentId, promptHash) {
       details: {
         reason: 'hash_mismatch',
         expected_hash: agent.hash,
-        received_hash: promptHash
-      }
+        received_hash: promptHash,
+      },
     };
   }
 
@@ -204,21 +257,4 @@ function verifyPromptHash(agentId, promptHash) {
       hash: agent.hash,
     },
   };
-}
-
-function handleHealthCheck() {
-  return new Response(
-    JSON.stringify({
-      status: 'healthy',
-      service: 'prompt-dispatcher',
-      version: '1.1.0',
-      lock_file_version: promptLock.version,
-      prompts_count: Object.keys(promptLock.prompts || {}).length,
-      timestamp: new Date().toISOString(),
-    }),
-    {
-      status: 200,
-      headers: JSON_HEADERS,
-    }
-  );
 }

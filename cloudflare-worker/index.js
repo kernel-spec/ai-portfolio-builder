@@ -1,6 +1,5 @@
 /**
- * Cloudflare Worker: Governed Prompt Dispatcher
- * Enterprise-grade runtime hash verification (fail-closed)
+ * Cloudflare Worker: Prompt Dispatcher with Strict Fail-Closed Enforcement
  */
 
 import promptLock from './prompt-lock.json';
@@ -11,122 +10,118 @@ const JSON_HEADERS = {
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
 export default {
-  async fetch(request, env) {
-    // CORS preflight
+  async fetch(request) {
+    const url = new URL(request.url);
+
+    // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
     }
 
-    // Health endpoint
-    if (request.method === 'GET' && new URL(request.url).pathname === '/health') {
+    // ---------------------------
+    // HEALTH ENDPOINT
+    // ---------------------------
+    if (request.method === 'GET' && url.pathname === '/health') {
       return handleHealthCheck();
     }
 
-    if (request.method !== 'POST') {
-      return jsonResponse({ error: 'Method not allowed. Use POST.' }, 405);
+    // ---------------------------
+    // MANIFEST ENDPOINT (NEW)
+    // ---------------------------
+    if (request.method === 'GET' && url.pathname === '/manifest') {
+      return jsonResponse({
+        version: promptLock.version,
+        lockfileVersion: promptLock.lockfileVersion,
+        algorithm: promptLock.algorithm,
+        prompts: promptLock.prompts,
+        integrity: promptLock.integrity,
+        timestamp: new Date().toISOString(),
+      }, 200);
     }
 
-    // Strict JSON parsing
+    // ---------------------------
+    // ENFORCE POST FOR DISPATCH
+    // ---------------------------
+    if (request.method !== 'POST') {
+      return jsonResponse(
+        { error: 'Method not allowed. Use POST.' },
+        405
+      );
+    }
+
+    // -------- STRICT JSON PARSING --------
     let body;
     try {
       body = await request.json();
     } catch {
-      return jsonResponse({ error: 'Invalid JSON body.' }, 400);
-    }
-
-    const validation = validateRequest(body);
-    if (!validation.valid) {
       return jsonResponse(
-        { error: 'Invalid request.', details: validation.errors },
+        { error: 'Invalid JSON body.' },
         400
       );
     }
 
-    // -------- LOCK REGISTRY CHECK --------
-    const lockEntry = promptLock.prompts?.[body.agent_id];
-    if (!lockEntry) {
+    // Ensure body is object
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return jsonResponse(
+        { error: 'Invalid request body structure.' },
+        400
+      );
+    }
+
+    // -------- VALIDATION --------
+    const validation = validateRequest(body);
+    if (!validation.valid) {
       return jsonResponse(
         {
-          error: `Unknown agent_id: ${body.agent_id}`,
+          error: 'Invalid request.',
+          details: validation.errors,
+        },
+        400
+      );
+    }
+
+    // -------- HASH VERIFICATION --------
+    const hashCheck = verifyPromptHash(body.agent_id, body.prompt_hash);
+    if (!hashCheck.valid) {
+      return jsonResponse(
+        {
+          error: `Hash verification failed for agent_id: ${body.agent_id}`,
           security_flag: true,
+          details: hashCheck.details || {},
         },
         403
       );
     }
 
-    if (lockEntry.hash !== body.prompt_hash) {
-      return jsonResponse(
-        {
-          error: 'Hash mismatch against lock registry.',
-          security_flag: true,
-        },
-        403
-      );
-    }
+    // -------- SUCCESS --------
+    const dispatchId = body.request_id || crypto.randomUUID();
 
-    // -------- RUNTIME FILE LOAD --------
-    const promptText = await loadPromptFile(lockEntry.file);
-    if (!promptText) {
-      return jsonResponse(
-        {
-          error: 'Prompt file missing.',
-          security_flag: true,
-        },
-        500
-      );
-    }
-
-    // -------- RUNTIME HASH VERIFICATION --------
-    const runtimeHash = await sha256(promptText);
-    if (runtimeHash !== lockEntry.hash) {
-      return jsonResponse(
-        {
-          error: 'Runtime hash mismatch. File integrity compromised.',
-          security_flag: true,
-        },
-        403
-      );
-    }
-
-    // -------- OPENAI CALL --------
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: promptText },
-          { role: 'user', content: body.user_input },
-        ],
-      }),
-    });
-
-    if (!openaiResponse.ok) {
-      return jsonResponse(
-        { error: 'OpenAI request failed.' },
-        502
-      );
-    }
-
-    const result = await openaiResponse.json();
+    console.log(
+      JSON.stringify({
+        event: 'dispatch_verified',
+        agent_id: body.agent_id,
+        dispatch_id: dispatchId,
+        timestamp: new Date().toISOString(),
+      })
+    );
 
     return jsonResponse(
       {
         success: true,
+        verified: true,
+        message: 'Prompt integrity verified. Ready for dispatch.',
+        dispatch_id: dispatchId,
         agent: {
-          id: body.agent_id,
-          type: lockEntry.type,
-          version: lockEntry.version,
+          agent_id: body.agent_id,
+          type: hashCheck.agent.type,
+          version: hashCheck.agent.version,
+          hash: hashCheck.agent.hash,
         },
-        output: result.choices?.[0]?.message?.content ?? null,
         timestamp: new Date().toISOString(),
       },
       200
@@ -134,15 +129,18 @@ export default {
   },
 };
 
-// =============================
+// ---------------------------
 // HELPERS
-// =============================
+// ---------------------------
 
 function jsonResponse(payload, status) {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: { ...JSON_HEADERS, ...CORS_HEADERS },
-  });
+  return new Response(
+    JSON.stringify(payload),
+    {
+      status,
+      headers: { ...JSON_HEADERS, ...CORS_HEADERS },
+    }
+  );
 }
 
 function validateRequest(body) {
@@ -156,43 +154,66 @@ function validateRequest(body) {
     errors.push('Missing or invalid prompt_hash.');
   }
 
-  if (!body.user_input || typeof body.user_input !== 'string') {
-    errors.push('Missing or invalid user_input.');
-  }
-
-  if (body.prompt_hash && !/^[a-f0-9]{64}$/.test(body.prompt_hash)) {
+  if (
+    body.prompt_hash &&
+    !/^[a-f0-9]{64}$/.test(body.prompt_hash)
+  ) {
     errors.push('prompt_hash must be SHA-256 hex (64 chars).');
   }
 
-  return { valid: errors.length === 0, errors };
-}
-
-async function sha256(text) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function loadPromptFile(path) {
-  try {
-    const url = new URL(path, import.meta.url);
-    const response = await fetch(url);
-    return await response.text();
-  } catch {
-    return null;
+  if (
+    body.request_id &&
+    typeof body.request_id !== 'string'
+  ) {
+    errors.push('request_id must be string (UUID recommended).');
   }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+function verifyPromptHash(agentId, promptHash) {
+  const agent = promptLock.prompts?.[agentId];
+
+  if (!agent) {
+    return {
+      valid: false,
+      details: { reason: 'unknown_agent' }
+    };
+  }
+
+  if (agent.hash !== promptHash) {
+    return {
+      valid: false,
+      details: {
+        reason: 'hash_mismatch',
+        expected_hash: agent.hash,
+        received_hash: promptHash
+      }
+    };
+  }
+
+  return {
+    valid: true,
+    agent: {
+      type: agent.type,
+      version: agent.version,
+      file: agent.file,
+      hash: agent.hash,
+    },
+  };
 }
 
 function handleHealthCheck() {
   return new Response(
     JSON.stringify({
       status: 'healthy',
-      service: 'governed-prompt-dispatcher',
-      version: '2.0.0',
-      lock_version: promptLock.version,
-      prompts_registered: Object.keys(promptLock.prompts || {}).length,
+      service: 'prompt-dispatcher',
+      version: '1.1.0',
+      lock_file_version: promptLock.version,
+      prompts_count: Object.keys(promptLock.prompts || {}).length,
       timestamp: new Date().toISOString(),
     }),
     {

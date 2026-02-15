@@ -8,7 +8,9 @@
     "validate:diff": "node git-diff-validator.js",
     "validate:meta": "node meta-validation.js",
     "validate:all": "npm run validate:system && npm run validate:diff",
-    "test:worker": "node worker-runtime-tests.js"
+    "test:worker": "node worker-runtime-tests.js",
+    "test:validator": "node test-git-diff-validator.js",
+    "test": "npm run test:validator && npm run test:worker"
   },
   "repository": {
     "type": "git",

@@ -1,25 +1,25 @@
 /**
  * AI Portfolio Builder — Enterprise Dispatch Worker
- * Version: 1.1.0
- * Mode: Hybrid Governance (Hard Attestation)
+ * Compatible with lockfile v1.0.0 structure
+ * Hybrid Governance — Hard Attestation
  */
 
 import lockFile from "./prompt-lock.json";
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request) {
     const url = new URL(request.url);
 
     // -------------------------
-    // HEALTH CHECK
+    // HEALTH
     // -------------------------
     if (url.pathname === "/health" && request.method === "GET") {
-      return jsonResponse({
+      return json({
         status: "healthy",
         service: "prompt-dispatcher",
         version: "1.1.0",
         lock_file_version: lockFile.version,
-        prompts_count: Object.keys(lockFile.hashes).length,
+        prompts_count: Object.keys(lockFile.prompts).length,
         timestamp: new Date().toISOString()
       });
     }
@@ -30,57 +30,50 @@ export default {
     if (url.pathname === "/dispatch" && request.method === "POST") {
       try {
         const body = await request.json();
+        const { agent_id, prompt_hash } = body;
 
-        const { agent_id, request_payload } = body;
-
-        if (!agent_id || !request_payload) {
-          return errorResponse("Invalid request body", 400);
+        if (!agent_id || !prompt_hash) {
+          return error("Missing agent_id or prompt_hash", 400);
         }
 
-        // 1️⃣ Verify agent exists
-        if (!lockFile.hashes[agent_id]) {
-          logSecurityEvent("UNKNOWN_AGENT", agent_id);
-          return errorResponse("Unknown agent_id", 403);
+        // 1️⃣ Agent existence check
+        const agent = lockFile.prompts[agent_id];
+
+        if (!agent) {
+          logSecurity("UNKNOWN_AGENT", agent_id);
+          return error("unknown_agent", 403);
         }
 
-        // 2️⃣ Retrieve canonical hash
-        const canonicalHash = lockFile.hashes[agent_id];
-
-        // 3️⃣ Runtime attestation (defense layer)
-        if (!canonicalHash || canonicalHash.length !== 64) {
-          logSecurityEvent("INVALID_HASH_FORMAT", agent_id);
-          return errorResponse("Hash verification failed", 403);
+        // 2️⃣ Hash format validation
+        if (!/^[a-f0-9]{64}$/i.test(prompt_hash)) {
+          logSecurity("INVALID_HASH_FORMAT", agent_id);
+          return error("invalid_hash_format", 400);
         }
 
-        // 4️⃣ Successful attestation
-        const attestation = {
-          attested: true,
-          agent_id,
-          hash_verified: true,
-          lock_version: lockFile.version,
-          timestamp: new Date().toISOString()
-        };
+        // 3️⃣ Hash comparison (hard enforcement)
+        if (agent.hash !== prompt_hash) {
+          logSecurity("HASH_MISMATCH", agent_id);
+          return error("hash_verification_failed", 403);
+        }
 
-        // ⚠️ Domain execution placeholder
-        // In production: forward to actual execution layer
-        const simulatedDomainOutput = {
-          message: `Agent ${agent_id} executed successfully.`,
-          request: request_payload
-        };
-
-        return jsonResponse({
+        // 4️⃣ Success
+        return json({
           success: true,
-          attestation,
-          result: simulatedDomainOutput
+          attestation: {
+            verified: true,
+            agent_id,
+            version: agent.version,
+            timestamp: new Date().toISOString()
+          }
         });
 
       } catch (err) {
-        logSecurityEvent("RUNTIME_EXCEPTION", err.message);
-        return errorResponse("Dispatch failed", 500);
+        logSecurity("RUNTIME_ERROR", err.message);
+        return error("dispatch_failed", 500);
       }
     }
 
-    return errorResponse("Not found", 404);
+    return error("not_found", 404);
   }
 };
 
@@ -88,23 +81,18 @@ export default {
 // Helpers
 // -------------------------
 
-function jsonResponse(data, status = 200) {
+function json(data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
     status,
-    headers: {
-      "Content-Type": "application/json"
-    }
+    headers: { "Content-Type": "application/json" }
   });
 }
 
-function errorResponse(message, status) {
-  return jsonResponse({
-    success: false,
-    error: message
-  }, status);
+function error(message, status) {
+  return json({ success: false, error: message }, status);
 }
 
-function logSecurityEvent(type, detail) {
+function logSecurity(type, detail) {
   console.log(JSON.stringify({
     level: "SECURITY",
     type,

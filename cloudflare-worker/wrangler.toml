@@ -1,45 +1,6 @@
-# cloudflare-worker/wrangler.toml
-
 name = "ai-portfolio-builder"
 main = "index.js"
 account_id = "e506d2ef2602866c8b18942256a5b3b2"
 
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
-
-workers_dev = true
-
-############################################################
-# ENVIRONMENTS
-############################################################
-
-[env.production]
-workers_dev = true
-
-############################################################
-# DEPLOYMENT MODEL
-############################################################
-
-# Production branch (main) → deployed via Cloudflare Git integration
-# Other branches → uploaded as preview versions
-# No routes defined → workers.dev only
-
-############################################################
-# OPTIONAL: Variables (future)
-############################################################
-
-# [vars]
-# ENVIRONMENT = "production"
-
-############################################################
-# OPTIONAL: KV / Durable Objects (future extension)
-############################################################
-
-# [[kv_namespaces]]
-# binding = "AUDIT_LOGS"
-# id = ""
-# preview_id = ""
-
-# [[durable_objects.bindings]]
-# name = "DISPATCH_STATE"
-# class_name = "DispatchState"

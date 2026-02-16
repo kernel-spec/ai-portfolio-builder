@@ -1,14 +1,11 @@
 {
   "version": "1.1.0",
-
-  "governance_mode": "hybrid",
-
   "governance": {
+    "mode": "hybrid",
     "ui_layer": "abstracted",
     "worker_layer": "hard-attestation",
     "ci_layer": "strict-validation"
   },
-
   "taxonomy": {
     "domains": {
       "domain-01-content": {},
@@ -22,50 +19,19 @@
       "domain-09-technical": {},
       "domain-10-communication": {}
     },
-
     "archetypes": {
-      "product-thinker": {
-        "composition": {
-          "domain-05-product": 50,
-          "domain-01-content": 30,
-          "domain-03-project-management": 20
-        }
-      },
-
-      "growth-operator": {
-        "composition": {
-          "domain-04-marketing": 50,
-          "domain-08-business": 30,
-          "domain-09-technical": 20
-        }
-      },
-
-      "learning-designer": {
-        "composition": {
-          "domain-06-education": 50,
-          "domain-01-content": 30,
-          "domain-10-communication": 20
-        }
-      },
-
-      "delivery-planner": {
-        "composition": {
-          "domain-03-project-management": 50,
-          "domain-02-analysis": 30,
-          "domain-05-product": 20
-        }
-      }
+      "delivery-planner": {},
+      "growth-operator": {},
+      "learning-designer": {},
+      "product-thinker": {}
     },
-
     "total_prompts": 14,
     "immutability": true
   },
-
   "security": {
     "attestation_required_for_production_dispatch": true,
     "fail_closed": true
   },
-
   "compatibility": {
     "lockfile_version": 2,
     "minimum_worker_version": "1.1.0"

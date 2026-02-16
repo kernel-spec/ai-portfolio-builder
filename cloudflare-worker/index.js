@@ -22,7 +22,16 @@ export default {
         });
       }
 
-      const body = await request.json();
+      let body;
+      try {
+        body = await request.json();
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "invalid_json" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
       const { agent_id, request_payload } = body;
 
       // Validate required fields

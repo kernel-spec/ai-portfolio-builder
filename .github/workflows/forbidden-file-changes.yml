@@ -31,60 +31,39 @@ jobs:
           fetch-depth: 0
 
       - name: Get changed files
-        id: changed_files
         run: |
-          # For PRs, compare against the base branch
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
             HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           else
-            # For push to main, compare with previous commit
             BASE_SHA="${{ github.event.before }}"
             HEAD_SHA="${{ github.sha }}"
           fi
           
           echo "Comparing $BASE_SHA to $HEAD_SHA"
-          
-          # Get list of changed files
           git diff --name-only $BASE_SHA $HEAD_SHA > changed_files.txt
           
+          echo ""
           echo "Changed files:"
           cat changed_files.txt
+          echo ""
 
-      - name: Check for unauthorized domain modifications
+      # =====================================================
+      # DOMAIN CHANGES
+      # =====================================================
+
+      - name: Check domain modifications
         run: |
-          echo "Checking for unauthorized domain scope modifications..."
-          
           VIOLATION=0
           
-          # Check if any domain files were changed
           if grep -q "^domains/" changed_files.txt; then
-            echo ""
-            echo "⚠️  Domain files have been modified:"
+            echo "Domain files modified:"
             grep "^domains/" changed_files.txt
-            echo ""
-            echo "Domain modifications require:"
-            echo "  1. Corresponding hash update in versions/prompt-lock.json"
-            echo "  2. Version update in versions/prompt-manifest.json"
-            echo "  3. Changelog entry in CHANGELOG.md"
-            echo "  4. Governance review approval"
-            echo ""
             
-            # Check if lock file was also updated
             if ! grep -q "^versions/prompt-lock.json$" changed_files.txt; then
-              echo "❌ Domain files changed but prompt-lock.json was NOT updated"
-              echo "This violates governance rules - all domain changes require hash updates."
+              echo ""
+              echo "❌ Domain modified WITHOUT updating prompt-lock.json"
               VIOLATION=1
-            else
-              echo "✅ prompt-lock.json was updated"
-            fi
-            
-            # Check if manifest was updated
-            if ! grep -q "^versions/prompt-manifest.json$" changed_files.txt; then
-              echo "⚠️  Domain files changed but prompt-manifest.json was NOT updated"
-              echo "Consider if version or metadata needs updating."
-            else
-              echo "✅ prompt-manifest.json was updated"
             fi
           fi
           
@@ -92,40 +71,22 @@ jobs:
             exit 1
           fi
 
-      - name: Check for unauthorized archetype modifications
+      # =====================================================
+      # ARCHETYPE CHANGES
+      # =====================================================
+
+      - name: Check archetype modifications
         run: |
-          echo "Checking for unauthorized archetype modifications..."
-          
           VIOLATION=0
           
-          # Check if any archetype files were changed
           if grep -q "^archetypes/" changed_files.txt; then
-            echo ""
-            echo "⚠️  Archetype files have been modified:"
+            echo "Archetype files modified:"
             grep "^archetypes/" changed_files.txt
-            echo ""
-            echo "Archetype modifications require:"
-            echo "  1. Corresponding hash update in versions/prompt-lock.json"
-            echo "  2. Version update in versions/prompt-manifest.json"
-            echo "  3. Composition validation (percentages sum to 100%)"
-            echo "  4. Changelog entry in CHANGELOG.md"
-            echo ""
             
-            # Check if lock file was also updated
             if ! grep -q "^versions/prompt-lock.json$" changed_files.txt; then
-              echo "❌ Archetype files changed but prompt-lock.json was NOT updated"
-              echo "This violates governance rules - all archetype changes require hash updates."
+              echo ""
+              echo "❌ Archetype modified WITHOUT updating prompt-lock.json"
               VIOLATION=1
-            else
-              echo "✅ prompt-lock.json was updated"
-            fi
-            
-            # Check if manifest was updated
-            if ! grep -q "^versions/prompt-manifest.json$" changed_files.txt; then
-              echo "⚠️  Archetype files changed but prompt-manifest.json was NOT updated"
-              echo "Consider if composition or version needs updating."
-            else
-              echo "✅ prompt-manifest.json was updated"
             fi
           fi
           
@@ -133,78 +94,58 @@ jobs:
             exit 1
           fi
 
-      - name: Check for protocol modifications
-        run: |
-          echo "Checking for protocol file modifications..."
-          
-          # Check if any protocol files were changed
-          if grep -q "^protocols/" changed_files.txt; then
-            echo ""
-            echo "⚠️  Protocol files have been modified:"
-            grep "^protocols/" changed_files.txt
-            echo ""
-            echo "Protocol modifications are HIGH-RISK changes that affect system governance."
-            echo ""
-            echo "Protocol changes require:"
-            echo "  1. Security review and approval"
-            echo "  2. Impact assessment on all agents"
-            echo "  3. Version update in affected protocols"
-            echo "  4. Comprehensive changelog entry"
-            echo "  5. Validation that all agents remain compliant"
-            echo ""
-            echo "⚠️  This check is INFORMATIONAL - manual review required."
-          else
-            echo "✅ No protocol files modified"
-          fi
+      # =====================================================
+      # LOCK FILE DIRECT MANIPULATION (FAIL-CLOSED)
+      # =====================================================
 
-      - name: Check for direct lock file modification
+      - name: Prevent direct lock file manipulation
         run: |
-          echo "Checking lock file modification patterns..."
-          
           if grep -q "^versions/prompt-lock.json$" changed_files.txt; then
-            echo ""
-            echo "⚠️  prompt-lock.json has been modified"
-            echo ""
-            echo "Lock file changes must ONLY occur when:"
-            echo "  1. A prompt file (domain or archetype) is modified"
-            echo "  2. The new hash is calculated and updated"
-            echo "  3. The version is incremented appropriately"
-            echo ""
-            echo "This check ensures lock file changes are accompanied by prompt changes."
-            echo ""
             
-            # Check if any prompt files were also changed
             PROMPT_CHANGED=0
+            
             if grep -q "^domains/" changed_files.txt || grep -q "^archetypes/" changed_files.txt; then
               PROMPT_CHANGED=1
             fi
             
             if [ "$PROMPT_CHANGED" -eq 0 ]; then
-              echo "⚠️  WARNING: Lock file modified but no prompt files changed"
-              echo "This may indicate:"
-              echo "  - Direct hash manipulation (prohibited)"
-              echo "  - Version-only update (acceptable if documented)"
-              echo "  - Correction of previous error (requires justification)"
               echo ""
-              echo "Manual review required to verify legitimacy of this change."
+              echo "❌ LOCK FILE MODIFIED WITHOUT PROMPT CHANGES"
+              echo ""
+              echo "Direct manipulation of versions/prompt-lock.json is prohibited."
+              echo "Lock file updates must be accompanied by actual prompt changes."
+              echo ""
+              exit 1
             else
-              echo "✅ Lock file modification accompanied by prompt file changes"
+              echo "✅ Lock file change accompanied by prompt changes"
             fi
           fi
+
+      # =====================================================
+      # PROTOCOL CHANGES (HIGH RISK – MANUAL REVIEW)
+      # =====================================================
+
+      - name: Detect protocol modifications
+        run: |
+          if grep -q "^protocols/" changed_files.txt; then
+            echo ""
+            echo "⚠️ Protocol files modified."
+            echo "Manual security review required."
+            echo ""
+          else
+            echo "No protocol changes detected."
+          fi
+
+      # =====================================================
+      # SUCCESS SUMMARY
+      # =====================================================
 
       - name: Summary
         if: success()
         run: |
           echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ PROTECTED FILE CHECKS PASSED"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Protected file checks PASSED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Governance enforcement is FAIL-CLOSED."
           echo ""
-          echo "All file modifications follow governance rules:"
-          echo "  ✅ Domain changes include hash updates"
-          echo "  ✅ Archetype changes include hash updates"
-          echo "  ✅ Lock file changes are legitimate"
-          echo ""
-          echo "Note: Some checks are informational and require manual review."
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

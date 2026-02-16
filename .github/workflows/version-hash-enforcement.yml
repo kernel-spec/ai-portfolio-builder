@@ -6,6 +6,7 @@ on:
       - 'domains/**/*.md'
       - 'archetypes/**/*.md'
       - 'versions/prompt-lock.json'
+      - 'versions/prompt-manifest.json'
       - '.github/workflows/version-hash-enforcement.yml'
   push:
     branches:
@@ -14,6 +15,7 @@ on:
       - 'domains/**/*.md'
       - 'archetypes/**/*.md'
       - 'versions/prompt-lock.json'
+      - 'versions/prompt-manifest.json'
 
 permissions:
   contents: read
@@ -22,166 +24,113 @@ jobs:
   verify-hashes:
     runs-on: ubuntu-latest
     name: Verify Prompt Hashes Match Lock File
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Calculate current hashes
-        id: calc_hashes
+      - name: Ensure required files exist
         run: |
-          echo "Calculating SHA-256 hashes for all prompt files..."
-          
-          MISMATCH=0
-          
-          # Check all domain prompts
-          for file in domains/*.md; do
-            if [ -f "$file" ]; then
-              FILENAME=$(basename "$file")
-              PROMPT_ID="${FILENAME%.system.prompt.md}"
-              
-              CURRENT_HASH=$(sha256sum "$file" | awk '{print $1}')
-              LOCK_HASH=$(jq -r ".prompts.\"$PROMPT_ID\".hash" versions/prompt-lock.json)
-              
-              echo ""
-              echo "Domain: $PROMPT_ID"
-              echo "  File: $file"
-              echo "  Current hash: $CURRENT_HASH"
-              echo "  Lock file hash: $LOCK_HASH"
-              
-              if [ "$CURRENT_HASH" != "$LOCK_HASH" ]; then
-                echo "  ❌ HASH MISMATCH DETECTED"
-                MISMATCH=1
-              else
-                echo "  ✅ Hash matches"
-              fi
-            fi
-          done
-          
-          # Check all archetype prompts
-          for file in archetypes/*.md; do
-            if [ -f "$file" ]; then
-              FILENAME=$(basename "$file")
-              PROMPT_ID="${FILENAME%.system.prompt.md}"
-              
-              CURRENT_HASH=$(sha256sum "$file" | awk '{print $1}')
-              LOCK_HASH=$(jq -r ".prompts.\"$PROMPT_ID\".hash" versions/prompt-lock.json)
-              
-              echo ""
-              echo "Archetype: $PROMPT_ID"
-              echo "  File: $file"
-              echo "  Current hash: $CURRENT_HASH"
-              echo "  Lock file hash: $LOCK_HASH"
-              
-              if [ "$CURRENT_HASH" != "$LOCK_HASH" ]; then
-                echo "  ❌ HASH MISMATCH DETECTED"
-                MISMATCH=1
-              else
-                echo "  ✅ Hash matches"
-              fi
-            fi
-          done
-          
-          echo "mismatch=$MISMATCH" >> $GITHUB_OUTPUT
-
-      - name: Check for hash mismatches
-        if: steps.calc_hashes.outputs.mismatch == '1'
-        run: |
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "❌ HASH VERIFICATION FAILED"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          echo "One or more prompt files have been modified without updating"
-          echo "the hash in versions/prompt-lock.json."
-          echo ""
-          echo "This is a MANDATORY governance check. Prompt changes require:"
-          echo "  1. Update the prompt file content"
-          echo "  2. Recalculate the SHA-256 hash"
-          echo "  3. Update versions/prompt-lock.json with the new hash"
-          echo "  4. Update versions/prompt-manifest.json version if needed"
-          echo "  5. Document the change in CHANGELOG.md"
-          echo ""
-          echo "To fix this:"
-          echo "  1. Run: sha256sum <prompt-file>"
-          echo "  2. Update the hash in versions/prompt-lock.json"
-          echo "  3. Commit both files together"
-          echo ""
-          echo "Security Note: Hash mismatches are treated as security issues."
-          echo "All prompt changes must be auditable and verifiable."
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          exit 1
-
-      - name: Verify all prompts have lock entries
-        run: |
-          echo "Verifying all prompt files have corresponding lock file entries..."
-          
-          MISSING=0
-          
-          # Check domains
-          for file in domains/*.md; do
-            if [ -f "$file" ]; then
-              FILENAME=$(basename "$file")
-              PROMPT_ID="${FILENAME%.system.prompt.md}"
-              
-              if ! jq -e ".prompts.\"$PROMPT_ID\"" versions/prompt-lock.json > /dev/null; then
-                echo "❌ Missing lock entry for: $PROMPT_ID"
-                MISSING=1
-              fi
-            fi
-          done
-          
-          # Check archetypes
-          for file in archetypes/*.md; do
-            if [ -f "$file" ]; then
-              FILENAME=$(basename "$file")
-              PROMPT_ID="${FILENAME%.system.prompt.md}"
-              
-              if ! jq -e ".prompts.\"$PROMPT_ID\"" versions/prompt-lock.json > /dev/null; then
-                echo "❌ Missing lock entry for: $PROMPT_ID"
-                MISSING=1
-              fi
-            fi
-          done
-          
-          if [ "$MISSING" -eq 1 ]; then
-            echo ""
-            echo "❌ Some prompt files are missing from prompt-lock.json"
-            echo "All prompts must have corresponding lock file entries."
+          if [ ! -f versions/prompt-lock.json ]; then
+            echo "❌ versions/prompt-lock.json missing"
             exit 1
           fi
-          
-          echo "✅ All prompt files have lock file entries"
+
+          if [ ! -f versions/prompt-manifest.json ]; then
+            echo "❌ versions/prompt-manifest.json missing"
+            exit 1
+          fi
+
+      - name: Validate JSON structure
+        run: |
+          jq empty versions/prompt-lock.json
+          jq empty versions/prompt-manifest.json
+
+      - name: Calculate and verify hashes
+        id: calc_hashes
+        run: |
+          echo "Calculating SHA-256 hashes..."
+
+          MISMATCH=0
+
+          mapfile -t FILES < <(find domains archetypes -type f -name "*.md")
+
+          # Fail-closed: no prompt files found
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "❌ No prompt files found in domains/ or archetypes/"
+            exit 1
+          fi
+
+          for file in "${FILES[@]}"; do
+            FILENAME=$(basename "$file")
+            PROMPT_ID="${FILENAME%.system.prompt.md}"
+
+            CURRENT_HASH=$(sha256sum "$file" | awk '{print $1}')
+            LOCK_HASH=$(jq -r ".prompts.\"$PROMPT_ID\".hash" versions/prompt-lock.json)
+
+            if [ "$LOCK_HASH" = "null" ]; then
+              echo "❌ Missing lock entry for: $PROMPT_ID"
+              MISMATCH=1
+              continue
+            fi
+
+            if [ "$CURRENT_HASH" != "$LOCK_HASH" ]; then
+              echo "❌ HASH MISMATCH: $PROMPT_ID"
+              MISMATCH=1
+            else
+              echo "✅ $PROMPT_ID OK"
+            fi
+          done
+
+          echo "mismatch=$MISMATCH" >> $GITHUB_OUTPUT
+
+      - name: Fail if mismatches detected
+        if: steps.calc_hashes.outputs.mismatch == '1'
+        run: exit 1
+
+      - name: Check for orphan lock entries
+        run: |
+          echo "Checking for orphan lock entries..."
+
+          ORPHAN=0
+
+          LOCK_IDS=$(jq -r '.prompts | keys[]' versions/prompt-lock.json)
+
+          for id in $LOCK_IDS; do
+            if [ ! -f "domains/$id.system.prompt.md" ] && \
+               [ ! -f "archetypes/$id.system.prompt.md" ]; then
+              echo "❌ Orphan lock entry: $id"
+              ORPHAN=1
+            fi
+          done
+
+          if [ "$ORPHAN" -eq 1 ]; then
+            exit 1
+          fi
+
+          echo "✅ No orphan lock entries"
 
       - name: Verify lock file version matches manifest
         run: |
           LOCK_VERSION=$(jq -r '.version' versions/prompt-lock.json)
           MANIFEST_VERSION=$(jq -r '.version' versions/prompt-manifest.json)
-          
-          echo "Lock file version: $LOCK_VERSION"
-          echo "Manifest version: $MANIFEST_VERSION"
-          
-          if [ "$LOCK_VERSION" != "$MANIFEST_VERSION" ]; then
-            echo "❌ Version mismatch between lock file and manifest"
-            echo "Both files must have the same version number."
+
+          if [ -z "$LOCK_VERSION" ] || [ "$LOCK_VERSION" = "null" ]; then
+            echo "❌ Invalid lock file version"
             exit 1
           fi
-          
-          echo "✅ Lock file and manifest versions match"
 
-      - name: Summary
-        if: success()
-        run: |
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ ALL HASH VERIFICATIONS PASSED"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          echo "✅ All prompt file hashes match prompt-lock.json"
-          echo "✅ All prompt files have lock file entries"
-          echo "✅ Lock file and manifest versions match"
-          echo ""
-          echo "Prompt integrity verified. Changes are auditable and traceable."
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if [ -z "$MANIFEST_VERSION" ] || [ "$MANIFEST_VERSION" = "null" ]; then
+            echo "❌ Invalid manifest version"
+            exit 1
+          fi
+
+          if [ "$LOCK_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "❌ Version mismatch between lock and manifest"
+            exit 1
+          fi
+
+          echo "✅ Version check passed"
+
+      - name: Success summary
+        run: echo "✅ All prompt integrity checks passed."

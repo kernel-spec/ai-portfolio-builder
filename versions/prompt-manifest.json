@@ -9,15 +9,56 @@
   "taxonomy": {
     "domains": 10,
     "archetypes": 4,
+    "total_prompts": 14,
     "immutability": true
   },
   "security": {
-    "attestation_required_for_production_dispatch": true,
-    "fail_closed": true,
-    "hash_algorithm": "SHA-256"
+    "attestation_required_for_production_dispatch": true
   },
-  "compatibility": {
-    "requires_worker_version": ">=1.1.0",
-    "openapi_schema": "3.1.0"
+  "domains": {
+    "domain-01-content": {},
+    "domain-02-analysis": {},
+    "domain-03-project-management": {},
+    "domain-04-marketing": {},
+    "domain-05-product": {},
+    "domain-06-education": {},
+    "domain-07-personal": {},
+    "domain-08-business": {},
+    "domain-09-technical": {},
+    "domain-10-communication": {}
+  },
+  "archetypes": {
+    "product-thinker": {
+      "primary_domain": "domain-05-product",
+      "composition": {
+        "domain-05-product": 0.5,
+        "domain-02-analysis": 0.3,
+        "domain-08-business": 0.2
+      }
+    },
+    "growth-operator": {
+      "primary_domain": "domain-04-marketing",
+      "composition": {
+        "domain-04-marketing": 0.5,
+        "domain-08-business": 0.3,
+        "domain-01-content": 0.2
+      }
+    },
+    "learning-designer": {
+      "primary_domain": "domain-06-education",
+      "composition": {
+        "domain-06-education": 0.6,
+        "domain-01-content": 0.2,
+        "domain-02-analysis": 0.2
+      }
+    },
+    "delivery-planner": {
+      "primary_domain": "domain-03-project-management",
+      "composition": {
+        "domain-03-project-management": 0.5,
+        "domain-05-product": 0.3,
+        "domain-10-communication": 0.2
+      }
+    }
   }
 }

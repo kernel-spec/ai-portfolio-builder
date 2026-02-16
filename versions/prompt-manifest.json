@@ -1,138 +1,39 @@
 {
-  "version": "1.0.0",
-  "generated": "2026-02-11T00:45:02Z",
-  "description": "Canonical manifest for all governed AI system prompts",
+  "version": "1.1.0",
+  "governance_mode": "hybrid",
+  "hash_enforcement": {
+    "ui_layer": "soft-validation",
+    "worker_layer": "hard-attestation",
+    "ci_layer": "strict-verification"
+  },
+  "ui_runtime": {
+    "platform": "chatgpt-ios-custom-gpt",
+    "enforcement": "logical-boundary-check",
+    "cryptographic_verification": false
+  },
+  "worker_runtime": {
+    "attestation_required": true,
+    "fail_mode": "closed",
+    "cryptographic_hash_validation": true
+  },
+  "ci_enforcement": {
+    "hash_mismatch": "fail",
+    "unknown_agent": "fail",
+    "schema_violation": "fail",
+    "ui_soft_validation_mismatch": "warn"
+  },
   "taxonomy": {
     "domains": 10,
     "archetypes": 4,
-    "total_prompts": 14
+    "immutability": true
   },
-  "domains": {
-    "domain-01-content": {
-      "name": "Content Creation",
-      "file": "domains/domain-01-content.system.prompt.md",
-      "canonical_id": "domain-01-content",
-      "version": "1.0.0",
-      "scope": "Ideation, creation, editing, and production of content across all formats"
-    },
-    "domain-02-analysis": {
-      "name": "Analysis & Decision Making",
-      "file": "domains/domain-02-analysis.system.prompt.md",
-      "canonical_id": "domain-02-analysis",
-      "version": "1.0.0",
-      "scope": "Data analysis, critical thinking, problem-solving, and decision support"
-    },
-    "domain-03-project-management": {
-      "name": "Project Management & Planning",
-      "file": "domains/domain-03-project-management.system.prompt.md",
-      "canonical_id": "domain-03-project-management",
-      "version": "1.0.0",
-      "scope": "Planning, organizing, scheduling, tracking, and coordinating projects"
-    },
-    "domain-04-marketing": {
-      "name": "Marketing & Growth",
-      "file": "domains/domain-04-marketing.system.prompt.md",
-      "canonical_id": "domain-04-marketing",
-      "version": "1.0.0",
-      "scope": "Market positioning, customer acquisition, brand development, growth tactics"
-    },
-    "domain-05-product": {
-      "name": "Product & Services",
-      "file": "domains/domain-05-product.system.prompt.md",
-      "canonical_id": "domain-05-product",
-      "version": "1.0.0",
-      "scope": "Product vision, feature definition, UX design, product strategy"
-    },
-    "domain-06-education": {
-      "name": "Education & Learning",
-      "file": "domains/domain-06-education.system.prompt.md",
-      "canonical_id": "domain-06-education",
-      "version": "1.0.0",
-      "scope": "Curriculum design, instructional methods, learning experiences"
-    },
-    "domain-07-personal": {
-      "name": "Personal Development & Productivity",
-      "file": "domains/domain-07-personal.system.prompt.md",
-      "canonical_id": "domain-07-personal",
-      "version": "1.0.0",
-      "scope": "Individual growth, habit formation, time management, goal-setting"
-    },
-    "domain-08-business": {
-      "name": "Business & Strategy",
-      "file": "domains/domain-08-business.system.prompt.md",
-      "canonical_id": "domain-08-business",
-      "version": "1.0.0",
-      "scope": "Business models, competitive strategy, organizational planning"
-    },
-    "domain-09-technical": {
-      "name": "Technical & System Thinking",
-      "file": "domains/domain-09-technical.system.prompt.md",
-      "canonical_id": "domain-09-technical",
-      "version": "1.0.0",
-      "scope": "Technical architecture, system design, engineering practices"
-    },
-    "domain-10-communication": {
-      "name": "Communication & Presentation",
-      "file": "domains/domain-10-communication.system.prompt.md",
-      "canonical_id": "domain-10-communication",
-      "version": "1.0.0",
-      "scope": "Effective communication, presentation design, public speaking, message delivery"
-    }
+  "security": {
+    "source_of_truth": "github-repository",
+    "lock_file_required": true,
+    "attestation_required_for_production_dispatch": true
   },
-  "archetypes": {
-    "product-thinker": {
-      "name": "Product Thinker",
-      "file": "archetypes/product-thinker.system.prompt.md",
-      "canonical_id": "product-thinker",
-      "version": "1.0.0",
-      "composition": {
-        "domain-05-product": 50,
-        "domain-02-analysis": 30,
-        "domain-09-technical": 20
-      },
-      "purpose": "Data-informed, technically-feasible product strategy and design"
-    },
-    "growth-operator": {
-      "name": "Growth Operator",
-      "file": "archetypes/growth-operator.system.prompt.md",
-      "canonical_id": "growth-operator",
-      "version": "1.0.0",
-      "composition": {
-        "domain-04-marketing": 50,
-        "domain-02-analysis": 30,
-        "domain-03-project-management": 20
-      },
-      "purpose": "Data-driven growth strategy with effective execution"
-    },
-    "learning-designer": {
-      "name": "Learning Designer",
-      "file": "archetypes/learning-designer.system.prompt.md",
-      "canonical_id": "learning-designer",
-      "version": "1.0.0",
-      "composition": {
-        "domain-06-education": 50,
-        "domain-01-content": 30,
-        "domain-02-analysis": 20
-      },
-      "purpose": "Effective, engaging, and measurable educational experiences"
-    },
-    "delivery-planner": {
-      "name": "Delivery Planner",
-      "file": "archetypes/delivery-planner.system.prompt.md",
-      "canonical_id": "delivery-planner",
-      "version": "1.0.0",
-      "composition": {
-        "domain-03-project-management": 50,
-        "domain-02-analysis": 30,
-        "domain-09-technical": 20
-      },
-      "purpose": "Data-informed, technically-sound project delivery"
-    }
-  },
-  "governance": {
-    "immutable_domains": true,
-    "hash_verification_required": true,
-    "version_increment_required": true,
-    "archetype_composition_validation": true
+  "compatibility": {
+    "minimum_worker_version": "1.0.0",
+    "minimum_ci_version": "1.0.0"
   }
 }

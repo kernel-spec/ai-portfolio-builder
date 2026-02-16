@@ -8,13 +8,6 @@
     "total_prompts": 14
   },
   "domains": {
-    "domain-01-content": {
-      "name": "Content Creation",
-      "file": "domains/domain-01-content.system.prompt.md",
-      "canonical_id": "domain-01-content",
-      "version": "1.0.0",
-      "scope": "Ideation, creation, editing, and production of content across all formats"
-    },
     "domain-02-analysis": {
       "name": "Analysis & Decision Making",
       "file": "domains/domain-02-analysis.system.prompt.md",
@@ -88,7 +81,7 @@
       "composition": {
         "domain-05-product": 50,
         "domain-02-analysis": 30,
-        "domain-09-technical": 20
+        "domain-09-technical": 25
       },
       "purpose": "Data-informed, technically-feasible product strategy and design"
     },

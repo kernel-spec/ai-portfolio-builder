@@ -128,6 +128,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration with additional LLM providers
 - Advanced monitoring and alerting dashboards
 
+## [1.1.0] - 2026-02-16
+
+### Changed
+
+#### Production Release Stabilization
+- **Hybrid Governance Model**: Implemented hybrid governance with abstracted UI layer, hard attestation in worker layer, and strict validation in CI layer
+- **Worker Hard Attestation**: Cloudflare Worker now performs runtime attestation with immutability enforcement
+- **iOS Custom GPT Compatibility**: Enhanced compatibility for Custom GPTs on iOS devices
+- **Lockfile v2**: Updated to lockfile version 2 with enhanced integrity validation
+- **Production-Ready Worker**: Updated worker to only accept `agent_id` and `request_payload` (no prompt_hash from UI)
+- **OpenAPI 3.1.0 Schema**: Added comprehensive OpenAPI specification for dispatch API endpoints
+- **Fail-Closed Security**: Worker fails closed if `integrity.immutable !== true`
+
+#### API Changes
+- Worker `/health` endpoint now returns minimal response: `{ version, prompts_count }`
+- Worker `/dispatch` endpoint returns only `{ response }` for successful dispatches
+- All error responses now return JSON with proper error codes (400, 403, 500)
+- Removed prompt_hash from UI dispatch interface (worker performs attestation internally)
+
+#### Governance Updates
+- Added `total_prompts: 14` to manifest taxonomy section
+- Synchronized `cloudflare-worker/prompt-lock.json` to be byte-identical with `versions/prompt-lock.json`
+- Enhanced security with attestation_required_for_production_dispatch flag
+
+### Security
+- Worker now validates lockfile integrity before processing any requests
+- Enhanced fail-closed behavior for unknown agents (403 responses)
+- Runtime attestation enforced at worker layer
+
+## [Unreleased]
+
+### Planned
+- Runtime execution framework (out of scope for 1.0.0 - design-time only)
+- Extended audit log storage and query system
+- Additional archetypes based on usage patterns
+- Integration with additional LLM providers
+- Advanced monitoring and alerting dashboards
+
 ## Version Policy
 
 ### Major Version (X.0.0)

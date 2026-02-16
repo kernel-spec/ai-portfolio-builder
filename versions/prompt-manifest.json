@@ -1,35 +1,23 @@
 {
   "version": "1.1.0",
   "governance_mode": "hybrid",
-
   "hash_enforcement": {
-    "ui_layer": "soft-validation",
+    "ui_layer": "abstracted",
     "worker_layer": "hard-attestation",
-    "ci_layer": "mandatory"
+    "ci_layer": "strict-validation"
   },
-
   "taxonomy": {
     "domains": 10,
     "archetypes": 4,
     "immutability": true
   },
-
   "security": {
     "attestation_required_for_production_dispatch": true,
     "fail_closed": true,
-    "unknown_agent_blocked": true,
-    "runtime_hash_verification": true
+    "hash_algorithm": "SHA-256"
   },
-
   "compatibility": {
-    "custom_gpt_runtime": "supported",
-    "ios_runtime": "supported",
-    "openapi_dispatch": "required"
-  },
-
-  "audit": {
-    "lock_file_required": true,
-    "ci_hash_validation": true,
-    "worker_logging_enabled": true
+    "requires_worker_version": ">=1.1.0",
+    "openapi_schema": "3.1.0"
   }
 }

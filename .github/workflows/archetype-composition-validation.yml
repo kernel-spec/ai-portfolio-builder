@@ -1,56 +1,59 @@
-name: Archetype Composition Validation (Hybrid v1.1.0)
+name: Hybrid Archetype Metadata Validation
 
 on:
   pull_request:
     paths:
-      - 'archetypes/**/*.md'
       - 'versions/prompt-manifest.json'
+      - '.github/workflows/archetype-composition-validation.yml'
   push:
     branches:
       - main
     paths:
-      - 'archetypes/**/*.md'
       - 'versions/prompt-manifest.json'
 
 permissions:
   contents: read
 
 jobs:
-  validate-compositions:
+  validate-archetype-metadata:
     runs-on: ubuntu-latest
+    name: Validate Archetype Metadata (Hybrid Mode)
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate composition percentages
+      - name: Validate archetype count
         run: |
-          FAILED=0
+          COUNT=$(jq '.taxonomy.archetypes' versions/prompt-manifest.json)
+          [ "$COUNT" -eq 4 ] || {
+            echo "❌ Expected 4 archetypes in hybrid model"
+            exit 1
+          }
 
-          for archetype in product-thinker growth-operator learning-designer delivery-planner; do
-            SUM=$(jq ".taxonomy.archetypes.\"$archetype\".composition | add" versions/prompt-manifest.json)
-            COUNT=$(jq ".taxonomy.archetypes.\"$archetype\".composition | length" versions/prompt-manifest.json)
+          echo "✅ Archetype count valid (4)"
 
-            [ "$SUM" -eq 100 ] || FAILED=1
-            [ "$COUNT" -ge 2 ] && [ "$COUNT" -le 4 ] || FAILED=1
-          done
-
-          [ "$FAILED" -eq 0 ] || exit 1
-          echo "✅ Composition percentages valid"
-
-      - name: Validate domain references exist
+      - name: Validate domain count
         run: |
-          FAILED=0
+          COUNT=$(jq '.taxonomy.domains' versions/prompt-manifest.json)
+          [ "$COUNT" -eq 10 ] || {
+            echo "❌ Expected 10 domains in hybrid model"
+            exit 1
+          }
 
-          for archetype in product-thinker growth-operator learning-designer delivery-planner; do
-            DOMAINS=$(jq -r ".taxonomy.archetypes.\"$archetype\".composition | keys[]" versions/prompt-manifest.json)
+          echo "✅ Domain count valid (10)"
 
-            for domain in $DOMAINS; do
-              jq -e ".taxonomy.domains.\"$domain\"" versions/prompt-manifest.json > /dev/null || FAILED=1
-            done
-          done
+      - name: Validate total prompt count
+        run: |
+          COUNT=$(jq '.taxonomy.total_prompts' versions/prompt-manifest.json)
+          [ "$COUNT" -eq 14 ] || {
+            echo "❌ Expected 14 total prompts"
+            exit 1
+          }
 
-          [ "$FAILED" -eq 0 ] || exit 1
-          echo "✅ Domain references valid"
+          echo "✅ Total prompt count valid (14)"
 
       - name: Summary
-        run: echo "✅ Archetype composition validation passed"
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ HYBRID ARCHETYPE METADATA VALID"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

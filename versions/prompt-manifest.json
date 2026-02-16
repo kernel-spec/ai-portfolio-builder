@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-02-11T00:45:02Z",
+  "generated": "2026-02-16T00:00:00Z",
   "description": "Canonical manifest for all governed AI system prompts",
   "taxonomy": {
     "domains": 10,
@@ -20,63 +20,63 @@
       "file": "domains/domain-02-analysis.system.prompt.md",
       "canonical_id": "domain-02-analysis",
       "version": "1.0.0",
-      "scope": "Data analysis, critical thinking, problem-solving, and decision support"
+      "scope": "Data analysis, critical thinking, structured reasoning, and decision support"
     },
     "domain-03-project-management": {
       "name": "Project Management & Planning",
       "file": "domains/domain-03-project-management.system.prompt.md",
       "canonical_id": "domain-03-project-management",
       "version": "1.0.0",
-      "scope": "Planning, organizing, scheduling, tracking, and coordinating projects"
+      "scope": "Planning, scheduling, execution tracking, and structured delivery management"
     },
     "domain-04-marketing": {
       "name": "Marketing & Growth",
       "file": "domains/domain-04-marketing.system.prompt.md",
       "canonical_id": "domain-04-marketing",
       "version": "1.0.0",
-      "scope": "Market positioning, customer acquisition, brand development, growth tactics"
+      "scope": "Market positioning, customer acquisition, growth systems, and brand strategy"
     },
     "domain-05-product": {
       "name": "Product & Services",
       "file": "domains/domain-05-product.system.prompt.md",
       "canonical_id": "domain-05-product",
       "version": "1.0.0",
-      "scope": "Product vision, feature definition, UX design, product strategy"
+      "scope": "Product strategy, feature definition, UX alignment, roadmap design"
     },
     "domain-06-education": {
       "name": "Education & Learning",
       "file": "domains/domain-06-education.system.prompt.md",
       "canonical_id": "domain-06-education",
       "version": "1.0.0",
-      "scope": "Curriculum design, instructional methods, learning experiences"
+      "scope": "Instructional design, curriculum architecture, and learning systems"
     },
     "domain-07-personal": {
       "name": "Personal Development & Productivity",
       "file": "domains/domain-07-personal.system.prompt.md",
       "canonical_id": "domain-07-personal",
       "version": "1.0.0",
-      "scope": "Individual growth, habit formation, time management, goal-setting"
+      "scope": "Individual growth systems, goal setting, habits, productivity optimization"
     },
     "domain-08-business": {
       "name": "Business & Strategy",
       "file": "domains/domain-08-business.system.prompt.md",
       "canonical_id": "domain-08-business",
       "version": "1.0.0",
-      "scope": "Business models, competitive strategy, organizational planning"
+      "scope": "Business models, competitive advantage, operational and strategic planning"
     },
     "domain-09-technical": {
       "name": "Technical & System Thinking",
       "file": "domains/domain-09-technical.system.prompt.md",
       "canonical_id": "domain-09-technical",
       "version": "1.0.0",
-      "scope": "Technical architecture, system design, engineering practices"
+      "scope": "Technical architecture, system modeling, engineering reasoning"
     },
     "domain-10-communication": {
       "name": "Communication & Presentation",
       "file": "domains/domain-10-communication.system.prompt.md",
       "canonical_id": "domain-10-communication",
       "version": "1.0.0",
-      "scope": "Effective communication, presentation design, public speaking, message delivery"
+      "scope": "Message clarity, presentation structure, narrative strategy"
     }
   },
   "archetypes": {
@@ -90,7 +90,7 @@
         "domain-02-analysis": 30,
         "domain-09-technical": 20
       },
-      "purpose": "Data-informed, technically-feasible product strategy and design"
+      "purpose": "Data-informed, technically-feasible product strategy and roadmap design"
     },
     "growth-operator": {
       "name": "Growth Operator",
@@ -102,7 +102,7 @@
         "domain-02-analysis": 30,
         "domain-03-project-management": 20
       },
-      "purpose": "Data-driven growth strategy with effective execution"
+      "purpose": "Data-driven growth execution and structured marketing systems"
     },
     "learning-designer": {
       "name": "Learning Designer",
@@ -114,7 +114,7 @@
         "domain-01-content": 30,
         "domain-02-analysis": 20
       },
-      "purpose": "Effective, engaging, and measurable educational experiences"
+      "purpose": "Structured educational experiences with measurable learning outcomes"
     },
     "delivery-planner": {
       "name": "Delivery Planner",
@@ -126,13 +126,14 @@
         "domain-02-analysis": 30,
         "domain-09-technical": 20
       },
-      "purpose": "Data-informed, technically-sound project delivery"
+      "purpose": "Structured, data-informed, technically-aware project delivery"
     }
   },
   "governance": {
     "immutable_domains": true,
     "hash_verification_required": true,
     "version_increment_required": true,
-    "archetype_composition_validation": true
+    "archetype_composition_validation": true,
+    "fail_closed_required": true
   }
 }

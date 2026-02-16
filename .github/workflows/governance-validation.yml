@@ -24,6 +24,7 @@ jobs:
         run: |
           jq empty versions/prompt-manifest.json
           jq empty versions/prompt-lock.json
+          jq empty cloudflare-worker/prompt-lock.json
           echo "✅ JSON syntax valid"
 
       # ------------------------------------------------------------
@@ -34,28 +35,18 @@ jobs:
           jq -e '.version' versions/prompt-manifest.json > /dev/null
           jq -e '.governance_mode' versions/prompt-manifest.json > /dev/null
           jq -e '.governance' versions/prompt-manifest.json > /dev/null
-          jq -e '.taxonomy' versions/prompt-manifest.json > /dev/null
+          jq -e '.taxonomy.domains' versions/prompt-manifest.json > /dev/null
+          jq -e '.taxonomy.archetypes' versions/prompt-manifest.json > /dev/null
           jq -e '.security' versions/prompt-manifest.json > /dev/null
           jq -e '.compatibility' versions/prompt-manifest.json > /dev/null
 
-          DOMAIN_COUNT=$(jq -r '.taxonomy.domains | length' versions/prompt-manifest.json)
-          ARCHETYPE_COUNT=$(jq -r '.taxonomy.archetypes | length' versions/prompt-manifest.json)
-          TOTAL_PROMPTS=$(jq -r '.taxonomy.total_prompts' versions/prompt-manifest.json)
+          DOMAIN_COUNT=$(jq '.taxonomy.domains | length' versions/prompt-manifest.json)
+          ARCHETYPE_COUNT=$(jq '.taxonomy.archetypes | length' versions/prompt-manifest.json)
+          TOTAL_PROMPTS=$(jq '.taxonomy.total_prompts' versions/prompt-manifest.json)
 
-          if [ "$DOMAIN_COUNT" -ne 10 ]; then
-            echo "❌ Expected 10 domains, found $DOMAIN_COUNT"
-            exit 1
-          fi
-
-          if [ "$ARCHETYPE_COUNT" -ne 4 ]; then
-            echo "❌ Expected 4 archetypes, found $ARCHETYPE_COUNT"
-            exit 1
-          fi
-
-          if [ "$TOTAL_PROMPTS" -ne 14 ]; then
-            echo "❌ Expected 14 total prompts, found $TOTAL_PROMPTS"
-            exit 1
-          fi
+          [ "$DOMAIN_COUNT" -eq 10 ] || { echo "❌ Expected 10 domains"; exit 1; }
+          [ "$ARCHETYPE_COUNT" -eq 4 ] || { echo "❌ Expected 4 archetypes"; exit 1; }
+          [ "$TOTAL_PROMPTS" -eq 14 ] || { echo "❌ Expected 14 total prompts"; exit 1; }
 
           echo "✅ Manifest structure valid"
 
@@ -69,12 +60,12 @@ jobs:
           jq -e '.algorithm' versions/prompt-lock.json > /dev/null
           jq -e '.prompts' versions/prompt-lock.json > /dev/null
 
-          LOCK_PROMPT_COUNT=$(jq -r '.prompts | length' versions/prompt-lock.json)
+          LOCK_PROMPT_COUNT=$(jq '.prompts | length' versions/prompt-lock.json)
 
-          if [ "$LOCK_PROMPT_COUNT" -ne 14 ]; then
-            echo "❌ Lockfile must contain 14 prompts, found $LOCK_PROMPT_COUNT"
+          [ "$LOCK_PROMPT_COUNT" -eq 14 ] || {
+            echo "❌ Lockfile must contain 14 prompts"
             exit 1
-          fi
+          }
 
           echo "✅ Lockfile structure valid"
 
@@ -86,10 +77,10 @@ jobs:
           MANIFEST_VERSION=$(jq -r '.version' versions/prompt-manifest.json)
           LOCK_VERSION=$(jq -r '.version' versions/prompt-lock.json)
 
-          if [ "$MANIFEST_VERSION" != "$LOCK_VERSION" ]; then
-            echo "❌ Version mismatch: manifest=$MANIFEST_VERSION lockfile=$LOCK_VERSION"
+          [ "$MANIFEST_VERSION" = "$LOCK_VERSION" ] || {
+            echo "❌ Version mismatch"
             exit 1
-          fi
+          }
 
           echo "✅ Version consistency verified"
 
@@ -101,7 +92,7 @@ jobs:
           echo "----------------------------------------"
           echo "Hybrid Governance Validation Passed"
           echo "Version: $(jq -r '.version' versions/prompt-manifest.json)"
-          echo "Domains: $(jq -r '.taxonomy.domains | length' versions/prompt-manifest.json)"
-          echo "Archetypes: $(jq -r '.taxonomy.archetypes | length' versions/prompt-manifest.json)"
-          echo "Total Prompts: $(jq -r '.taxonomy.total_prompts' versions/prompt-manifest.json)"
+          echo "Domains: $(jq '.taxonomy.domains | length' versions/prompt-manifest.json)"
+          echo "Archetypes: $(jq '.taxonomy.archetypes | length' versions/prompt-manifest.json)"
+          echo "Total Prompts: $(jq '.taxonomy.total_prompts' versions/prompt-manifest.json)"
           echo "----------------------------------------"

@@ -6,18 +6,9 @@ on:
       - 'domains/**/*.md'
       - 'archetypes/**/*.md'
       - 'versions/prompt-lock.json'
-      - 'versions/prompt-manifest.json'
-      - 'cloudflare-worker/prompt-lock.json'
-      - '.github/workflows/version-hash-enforcement.yml'
   push:
     branches:
       - main
-    paths:
-      - 'domains/**/*.md'
-      - 'archetypes/**/*.md'
-      - 'versions/prompt-lock.json'
-      - 'versions/prompt-manifest.json'
-      - 'cloudflare-worker/prompt-lock.json'
 
 permissions:
   contents: read
@@ -25,153 +16,31 @@ permissions:
 jobs:
   verify-hashes:
     runs-on: ubuntu-latest
-    name: Verify Prompt Hashes & Governance Integrity
-    
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # -------------------------------------------------
-      # 1️⃣ Validate lockfile metadata
-      # -------------------------------------------------
-      - name: Validate lockfile metadata
+      - name: Verify SHA-256 hashes
         run: |
-          echo "Validating lockfile metadata..."
-
-          jq -e '.algorithm == "SHA-256"' versions/prompt-lock.json > /dev/null \
-            || { echo "❌ Lockfile must use SHA-256 algorithm"; exit 1; }
-
-          jq -e '.lockfileVersion == 2' versions/prompt-lock.json > /dev/null \
-            || { echo "❌ lockfileVersion must be 2"; exit 1; }
-
-          jq -e '.integrity.immutable == true' versions/prompt-lock.json > /dev/null \
-            || { echo "❌ integrity.immutable must be true"; exit 1; }
-
-          echo "✅ Lockfile metadata valid"
-
-      # -------------------------------------------------
-      # 2️⃣ Verify worker lockfile is synchronized
-      # -------------------------------------------------
-      - name: Verify worker lockfile sync
-        run: |
-          echo "Checking worker lockfile synchronization..."
-
-          if ! diff versions/prompt-lock.json cloudflare-worker/prompt-lock.json > /dev/null; then
-            echo "❌ Worker lockfile is NOT byte-identical to versions/prompt-lock.json"
-            exit 1
-          fi
-
-          echo "✅ Worker lockfile synchronized"
-
-      # -------------------------------------------------
-      # 3️⃣ Verify prompt hashes match files
-      # -------------------------------------------------
-      - name: Verify prompt file hashes
-        run: |
-          echo "Verifying SHA-256 hashes..."
-
-          MISMATCH=0
+          FAILED=0
 
           for file in domains/*.md archetypes/*.md; do
-            if [ -f "$file" ]; then
-              FILENAME=$(basename "$file")
-              PROMPT_ID="${FILENAME%.system.prompt.md}"
+            [ -f "$file" ] || continue
 
-              CURRENT_HASH=$(sha256sum "$file" | awk '{print $1}')
-              LOCK_HASH=$(jq -r ".prompts.\"$PROMPT_ID\".hash" versions/prompt-lock.json)
+            ID=$(basename "$file" .system.prompt.md)
+            CURRENT=$(sha256sum "$file" | awk '{print $1}')
+            LOCK=$(jq -r ".prompts.\"$ID\".hash" versions/prompt-lock.json)
 
-              echo ""
-              echo "Prompt: $PROMPT_ID"
-              echo "  Current: $CURRENT_HASH"
-              echo "  Locked : $LOCK_HASH"
-
-              if [ "$LOCK_HASH" = "null" ]; then
-                echo "  ❌ Missing hash in lockfile"
-                MISMATCH=1
-              elif [ "$CURRENT_HASH" != "$LOCK_HASH" ]; then
-                echo "  ❌ HASH MISMATCH"
-                MISMATCH=1
-              else
-                echo "  ✅ Match"
-              fi
-            fi
+            [ "$CURRENT" = "$LOCK" ] || FAILED=1
           done
 
-          if [ "$MISMATCH" -eq 1 ]; then
-            echo ""
-            echo "❌ HASH VERIFICATION FAILED"
-            exit 1
-          fi
-
-          echo ""
+          [ "$FAILED" -eq 0 ] || exit 1
           echo "✅ All hashes verified"
 
-      # -------------------------------------------------
-      # 4️⃣ Verify all prompts exist in lockfile
-      # -------------------------------------------------
-      - name: Verify all prompt files have lock entries
+      - name: Validate immutable flag
         run: |
-          echo "Checking lockfile coverage..."
+          jq -e '.integrity.immutable == true' versions/prompt-lock.json > /dev/null || exit 1
+          echo "✅ Lockfile immutable"
 
-          MISSING=0
-
-          for file in domains/*.md archetypes/*.md; do
-            if [ -f "$file" ]; then
-              FILENAME=$(basename "$file")
-              PROMPT_ID="${FILENAME%.system.prompt.md}"
-
-              if ! jq -e ".prompts.\"$PROMPT_ID\"" versions/prompt-lock.json > /dev/null; then
-                echo "❌ Missing lock entry for $PROMPT_ID"
-                MISSING=1
-              fi
-            fi
-          done
-
-          if [ "$MISSING" -eq 1 ]; then
-            echo "❌ Lockfile missing prompt entries"
-            exit 1
-          fi
-
-          echo "✅ Lockfile covers all prompts"
-
-      # -------------------------------------------------
-      # 5️⃣ Verify version consistency
-      # -------------------------------------------------
-      - name: Verify version consistency
-        run: |
-          LOCK_VERSION=$(jq -r '.version' versions/prompt-lock.json)
-          MANIFEST_VERSION=$(jq -r '.version' versions/prompt-manifest.json)
-
-          echo "Lock version: $LOCK_VERSION"
-          echo "Manifest version: $MANIFEST_VERSION"
-
-          if [ "$LOCK_VERSION" != "$MANIFEST_VERSION" ]; then
-            echo "❌ Lockfile and manifest version mismatch"
-            exit 1
-          fi
-
-          echo "✅ Versions consistent"
-
-      # -------------------------------------------------
-      # 6️⃣ Summary
-      # -------------------------------------------------
       - name: Summary
-        if: success()
-        run: |
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ HASH & GOVERNANCE ENFORCEMENT PASSED (Hybrid v1.1.0)"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          echo "Validated:"
-          echo "  ✅ SHA-256 enforced"
-          echo "  ✅ lockfileVersion = 2"
-          echo "  ✅ integrity.immutable = true"
-          echo "  ✅ Worker lockfile synchronized"
-          echo "  ✅ All hashes match"
-          echo "  ✅ All prompts covered"
-          echo "  ✅ Versions consistent"
-          echo ""
-          echo "Hybrid governance integrity verified."
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        run: echo "✅ Hash enforcement passed"

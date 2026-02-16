@@ -12,153 +12,137 @@ on:
     paths:
       - 'versions/prompt-manifest.json'
       - 'versions/prompt-lock.json'
+      - '.github/workflows/schema-validation.yml'
 
 permissions:
   contents: read
 
 jobs:
-  validate-json-schema:
+  validate-schema:
     runs-on: ubuntu-latest
-    name: Validate JSON Schema
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+    steps:
+      - uses: actions/checkout@v4
+
+      # ------------------------------------------------
+      # JSON SYNTAX (HARD FAIL)
+      # ------------------------------------------------
 
       - name: Validate JSON syntax
         run: |
-          echo "Validating prompt-manifest.json..."
-          if ! jq empty versions/prompt-manifest.json 2>/dev/null; then
-            echo "❌ prompt-manifest.json is not valid JSON"
-            exit 1
-          fi
-          echo "✅ prompt-manifest.json is valid JSON"
-          
-          echo "Validating prompt-lock.json..."
-          if ! jq empty versions/prompt-lock.json 2>/dev/null; then
-            echo "❌ prompt-lock.json is not valid JSON"
-            exit 1
-          fi
-          echo "✅ prompt-lock.json is valid JSON"
+          jq empty versions/prompt-manifest.json || { echo "❌ Invalid manifest JSON"; exit 1; }
+          jq empty versions/prompt-lock.json || { echo "❌ Invalid lock JSON"; exit 1; }
 
-      - name: Validate manifest structure
-        run: |
-          echo "Validating prompt-manifest.json structure..."
-          
-          # Check required top-level fields
-          jq -e '.version' versions/prompt-manifest.json > /dev/null || { echo "❌ Missing 'version' field"; exit 1; }
-          jq -e '.domains' versions/prompt-manifest.json > /dev/null || { echo "❌ Missing 'domains' field"; exit 1; }
-          jq -e '.archetypes' versions/prompt-manifest.json > /dev/null || { echo "❌ Missing 'archetypes' field"; exit 1; }
-          jq -e '.governance' versions/prompt-manifest.json > /dev/null || { echo "❌ Missing 'governance' field"; exit 1; }
-          
-          # Check we have exactly 10 domains
-          DOMAIN_COUNT=$(jq '.domains | length' versions/prompt-manifest.json)
-          if [ "$DOMAIN_COUNT" -ne 10 ]; then
-            echo "❌ Expected 10 domains, found $DOMAIN_COUNT"
-            exit 1
-          fi
-          echo "✅ Found exactly 10 domains"
-          
-          # Check we have exactly 4 archetypes
-          ARCHETYPE_COUNT=$(jq '.archetypes | length' versions/prompt-manifest.json)
-          if [ "$ARCHETYPE_COUNT" -ne 4 ]; then
-            echo "❌ Expected 4 archetypes, found $ARCHETYPE_COUNT"
-            exit 1
-          fi
-          echo "✅ Found exactly 4 archetypes"
-          
-          echo "✅ prompt-manifest.json structure is valid"
+      # ------------------------------------------------
+      # REQUIRED TOP-LEVEL FIELDS
+      # ------------------------------------------------
 
-      - name: Validate lock file structure
+      - name: Validate required fields
         run: |
-          echo "Validating prompt-lock.json structure..."
-          
-          # Check required top-level fields
-          jq -e '.version' versions/prompt-lock.json > /dev/null || { echo "❌ Missing 'version' field"; exit 1; }
-          jq -e '.prompts' versions/prompt-lock.json > /dev/null || { echo "❌ Missing 'prompts' field"; exit 1; }
-          jq -e '.algorithm' versions/prompt-lock.json > /dev/null || { echo "❌ Missing 'algorithm' field"; exit 1; }
-          
-          # Verify algorithm is SHA-256
-          ALGORITHM=$(jq -r '.algorithm' versions/prompt-lock.json)
-          if [ "$ALGORITHM" != "SHA-256" ]; then
-            echo "❌ Expected algorithm 'SHA-256', found '$ALGORITHM'"
-            exit 1
-          fi
-          
-          # Check total prompts count
-          TOTAL_PROMPTS=$(jq '.prompts | length' versions/prompt-lock.json)
-          if [ "$TOTAL_PROMPTS" -ne 14 ]; then
-            echo "❌ Expected 14 total prompts (10 domains + 4 archetypes), found $TOTAL_PROMPTS"
-            exit 1
-          fi
-          echo "✅ Found exactly 14 prompts in lock file"
-          
-          echo "✅ prompt-lock.json structure is valid"
-
-      - name: Validate archetype compositions
-        run: |
-          echo "Validating archetype compositions..."
-          
-          # Check each archetype has valid composition
-          for archetype in product-thinker growth-operator learning-designer delivery-planner; do
-            echo "Checking $archetype..."
-            
-            # Check composition exists
-            jq -e ".archetypes.\"$archetype\".composition" versions/prompt-manifest.json > /dev/null || {
-              echo "❌ Missing composition for $archetype"
-              exit 1
-            }
-            
-            # Get composition percentages and sum them
-            COMPOSITION_SUM=$(jq ".archetypes.\"$archetype\".composition | add" versions/prompt-manifest.json)
-            if [ "$COMPOSITION_SUM" -ne 100 ]; then
-              echo "❌ Composition for $archetype sums to $COMPOSITION_SUM%, expected 100%"
-              exit 1
-            fi
-            
-            # Check domain count (should be 3 for all current archetypes)
-            DOMAIN_COUNT=$(jq ".archetypes.\"$archetype\".composition | length" versions/prompt-manifest.json)
-            if [ "$DOMAIN_COUNT" -lt 2 ] || [ "$DOMAIN_COUNT" -gt 4 ]; then
-              echo "❌ Archetype $archetype has $DOMAIN_COUNT domains, expected 2-4"
-              exit 1
-            fi
-            
-            echo "✅ $archetype composition is valid"
+          for field in version domains archetypes governance; do
+            jq -e ".$field" versions/prompt-manifest.json > /dev/null || { echo "❌ Missing $field in manifest"; exit 1; }
           done
-          
-          echo "✅ All archetype compositions are valid"
 
-      - name: Validate domain IDs are canonical
-        run: |
-          echo "Validating domain IDs..."
-          
-          # Check all domain IDs follow the pattern domain-NN-name
-          for i in {1..10}; do
-            DOMAIN_NUM=$(printf "%02d" $i)
-            DOMAIN_COUNT=$(jq "to_entries | map(select(.key | startswith(\"domain-$DOMAIN_NUM-\"))) | length" versions/prompt-manifest.json <<< "$(jq '.domains' versions/prompt-manifest.json)")
-            
-            if [ "$DOMAIN_COUNT" -ne 1 ]; then
-              echo "❌ Expected exactly 1 domain with ID domain-$DOMAIN_NUM-*, found $DOMAIN_COUNT"
-              exit 1
-            fi
+          for field in version prompts algorithm; do
+            jq -e ".$field" versions/prompt-lock.json > /dev/null || { echo "❌ Missing $field in lock"; exit 1; }
           done
-          
-          echo "✅ All domain IDs are canonical"
 
-      - name: Summary
-        if: success()
+      # ------------------------------------------------
+      # VERSION MATCH ENFORCEMENT
+      # ------------------------------------------------
+
+      - name: Enforce version match
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ All schema validations passed"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ JSON syntax valid"
-          echo "✅ Manifest structure valid (10 domains, 4 archetypes)"
-          echo "✅ Lock file structure valid (14 prompts, SHA-256)"
-          echo "✅ Archetype compositions valid (sum to 100%)"
-          echo "✅ Domain IDs are canonical"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          LOCK_VERSION=$(jq -r '.version' versions/prompt-lock.json)
+          MANIFEST_VERSION=$(jq -r '.version' versions/prompt-manifest.json)
+
+          if [ "$LOCK_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "❌ Version mismatch between manifest and lock"
+            exit 1
+          fi
+
+      # ------------------------------------------------
+      # SHA-256 VALIDATION
+      # ------------------------------------------------
+
+      - name: Validate hash format
+        run: |
+          INVALID=$(jq -r '.prompts[].hash' versions/prompt-lock.json | grep -vE '^[a-f0-9]{64}$' || true)
+
+          if [ -n "$INVALID" ]; then
+            echo "❌ Invalid SHA-256 hash detected"
+            exit 1
+          fi
+
+      - name: Validate algorithm
+        run: |
+          ALG=$(jq -r '.algorithm' versions/prompt-lock.json)
+          if [ "$ALG" != "SHA-256" ]; then
+            echo "❌ Lock file must use SHA-256"
+            exit 1
+          fi
+
+      # ------------------------------------------------
+      # PROMPT CROSS-REFERENCE VALIDATION
+      # ------------------------------------------------
+
+      - name: Ensure manifest prompts match lock prompts
+        run: |
+          FAILED=0
+
+          MANIFEST_PROMPTS=$(jq -r '.domains | keys[], .archetypes | keys[]' versions/prompt-manifest.json | sort)
+          LOCK_PROMPTS=$(jq -r '.prompts | keys[]' versions/prompt-lock.json | sort)
+
+          if [ "$MANIFEST_PROMPTS" != "$LOCK_PROMPTS" ]; then
+            echo "❌ Manifest and lock prompt IDs mismatch"
+            echo "Manifest:"
+            echo "$MANIFEST_PROMPTS"
+            echo "Lock:"
+            echo "$LOCK_PROMPTS"
+            exit 1
+          fi
+
+      # ------------------------------------------------
+      # DYNAMIC ARCHETYPE VALIDATION
+      # ------------------------------------------------
+
+      - name: Validate archetype compositions dynamically
+        run: |
+          FAILED=0
+
+          for archetype in $(jq -r '.archetypes | keys[]' versions/prompt-manifest.json); do
+
+            SUM=$(jq ".archetypes.\"$archetype\".composition | add" versions/prompt-manifest.json)
+            if [ "$SUM" -ne 100 ]; then
+              echo "❌ $archetype composition must sum to 100%"
+              FAILED=1
+            fi
+
+            COUNT=$(jq ".archetypes.\"$archetype\".composition | length" versions/prompt-manifest.json)
+            if [ "$COUNT" -lt 2 ] || [ "$COUNT" -gt 4 ]; then
+              echo "❌ $archetype must have 2-4 domains"
+              FAILED=1
+            fi
+
+          done
+
+          if [ "$FAILED" -eq 1 ]; then
+            exit 1
+          fi
+
+      # ------------------------------------------------
+      # DOMAIN ID REGEX ENFORCEMENT
+      # ------------------------------------------------
+
+      - name: Validate domain ID pattern
+        run: |
+          INVALID=$(jq -r '.domains | keys[]' versions/prompt-manifest.json | grep -vE '^domain-[0-9]{2}-[a-z-]+$' || true)
+
+          if [ -n "$INVALID" ]; then
+            echo "❌ Invalid domain ID pattern detected:"
+            echo "$INVALID"
+            exit 1
+          fi
+
+      - name: Success
+        run: echo "✅ Schema fully validated (fail-closed)."

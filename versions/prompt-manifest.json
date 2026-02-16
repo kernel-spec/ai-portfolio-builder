@@ -2,38 +2,36 @@
   "version": "1.1.0",
   "governance_mode": "hybrid",
   "governance": {
-    "ui_layer": "abstracted",
-    "worker_layer": "hard-attestation",
-    "ci_layer": "strict-validation"
+    "model": "hybrid",
+    "validation": "ci-enforced",
+    "lockfile_required": true
   },
   "taxonomy": {
-    "domains": {
-      "domain-01-content": {},
-      "domain-02-analysis": {},
-      "domain-03-project-management": {},
-      "domain-04-marketing": {},
-      "domain-05-product": {},
-      "domain-06-education": {},
-      "domain-07-personal": {},
-      "domain-08-business": {},
-      "domain-09-technical": {},
-      "domain-10-communication": {}
-    },
-    "archetypes": {
-      "product-thinker": {},
-      "growth-operator": {},
-      "learning-designer": {},
-      "delivery-planner": {}
-    },
-    "total_prompts": 14,
-    "immutability": true
+    "domains": [
+      "domain-01-content",
+      "domain-02-analysis",
+      "domain-03-project-management",
+      "domain-04-marketing",
+      "domain-05-product",
+      "domain-06-education",
+      "domain-07-personal",
+      "domain-08-business",
+      "domain-09-technical",
+      "domain-10-communication"
+    ],
+    "archetypes": [
+      "delivery-planner",
+      "growth-operator",
+      "learning-designer",
+      "product-thinker"
+    ],
+    "total_prompts": 14
   },
   "security": {
-    "attestation_required_for_production_dispatch": true,
-    "fail_closed": true
+    "hash_algorithm": "sha256",
+    "immutable_lockfile": true
   },
   "compatibility": {
-    "lockfile_version": 2,
-    "minimum_worker_version": "1.1.0"
+    "minimum_version": "1.0.0"
   }
 }

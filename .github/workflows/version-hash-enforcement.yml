@@ -24,7 +24,7 @@ jobs:
   verify-hashes:
     runs-on: ubuntu-latest
     name: Verify Prompt Hashes Match Lock File
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,19 +46,25 @@ jobs:
           jq empty versions/prompt-lock.json
           jq empty versions/prompt-manifest.json
 
-      - name: Calculate current hashes
+      - name: Calculate and verify hashes
         id: calc_hashes
         run: |
-          echo "Calculating SHA-256 hashes for all prompt files..."
-          
+          echo "Calculating SHA-256 hashes..."
+
           MISMATCH=0
 
           mapfile -t FILES < <(find domains archetypes -type f -name "*.md")
 
+          # Fail-closed: no prompt files found
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "❌ No prompt files found in domains/ or archetypes/"
+            exit 1
+          fi
+
           for file in "${FILES[@]}"; do
             FILENAME=$(basename "$file")
             PROMPT_ID="${FILENAME%.system.prompt.md}"
-            
+
             CURRENT_HASH=$(sha256sum "$file" | awk '{print $1}')
             LOCK_HASH=$(jq -r ".prompts.\"$PROMPT_ID\".hash" versions/prompt-lock.json)
 
@@ -81,6 +87,28 @@ jobs:
       - name: Fail if mismatches detected
         if: steps.calc_hashes.outputs.mismatch == '1'
         run: exit 1
+
+      - name: Check for orphan lock entries
+        run: |
+          echo "Checking for orphan lock entries..."
+
+          ORPHAN=0
+
+          LOCK_IDS=$(jq -r '.prompts | keys[]' versions/prompt-lock.json)
+
+          for id in $LOCK_IDS; do
+            if [ ! -f "domains/$id.system.prompt.md" ] && \
+               [ ! -f "archetypes/$id.system.prompt.md" ]; then
+              echo "❌ Orphan lock entry: $id"
+              ORPHAN=1
+            fi
+          done
+
+          if [ "$ORPHAN" -eq 1 ]; then
+            exit 1
+          fi
+
+          echo "✅ No orphan lock entries"
 
       - name: Verify lock file version matches manifest
         run: |

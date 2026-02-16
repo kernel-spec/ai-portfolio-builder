@@ -1,0 +1,154 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AI Portfolio Builder Dispatch API",
+    "version": "1.1.0",
+    "description": "Production-ready dispatch API with hybrid governance model and hard attestation",
+    "contact": {
+      "name": "AI Portfolio Builder",
+      "url": "https://github.com/kernel-spec/ai-portfolio-builder"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://ai-portfolio-builder.{account}.workers.dev",
+      "description": "Production Cloudflare Worker"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Returns service health status and version information",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["version", "prompts_count"],
+                  "properties": {
+                    "version": {
+                      "type": "string",
+                      "description": "Current version of the dispatch service",
+                      "example": "1.1.0"
+                    },
+                    "prompts_count": {
+                      "type": "integer",
+                      "description": "Total number of registered prompts",
+                      "example": 14
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dispatch": {
+      "post": {
+        "summary": "Dispatch Agent",
+        "description": "Dispatch a canonical agent with runtime attestation and governance enforcement",
+        "operationId": "dispatchAgent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["agent_id", "request_payload"],
+                "properties": {
+                  "agent_id": {
+                    "type": "string",
+                    "description": "Canonical agent identifier from the prompt lock registry",
+                    "example": "domain-08-business"
+                  },
+                  "request_payload": {
+                    "type": "string",
+                    "description": "The request data to send to the agent",
+                    "example": "Analyze market trends for Q1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Agent dispatched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["response"],
+                  "properties": {
+                    "response": {
+                      "type": "string",
+                      "description": "Agent execution result",
+                      "example": "Agent domain-08-business executed successfully with hash 09d8defd..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request - missing required fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "invalid_request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - unknown agent or verification failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": ["unknown_agent", "verification_failed"],
+                      "example": "unknown_agent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error - integrity check failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "integrity_check_failed"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {}
+  }
+}

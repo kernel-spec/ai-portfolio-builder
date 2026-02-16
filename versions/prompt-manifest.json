@@ -9,6 +9,7 @@
   "taxonomy": {
     "domains": 10,
     "archetypes": 4,
+    "total_prompts": 14,
     "immutability": true
   },
   "security": {

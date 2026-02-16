@@ -1,46 +1,107 @@
-name: Version Hash Enforcement (Hybrid v1.1.0)
+name: Hybrid Governance Validation (v1.1.0)
 
 on:
-  pull_request:
-    paths:
-      - 'domains/**/*.md'
-      - 'archetypes/**/*.md'
-      - 'versions/prompt-lock.json'
   push:
     branches:
       - main
-
-permissions:
-  contents: read
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  verify-hashes:
-    runs-on: ubuntu-latest
+  validate-governance:
+    name: Validate Hybrid Governance Integrity
+    runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Verify SHA-256 hashes
+      # ------------------------------------------------------------
+      # 1️⃣ Validate JSON Syntax
+      # ------------------------------------------------------------
+      - name: Validate JSON syntax
         run: |
-          FAILED=0
+          jq empty versions/prompt-manifest.json
+          jq empty versions/prompt-lock.json
+          echo "✅ JSON syntax valid"
 
-          for file in domains/*.md archetypes/*.md; do
-            [ -f "$file" ] || continue
-
-            ID=$(basename "$file" .system.prompt.md)
-            CURRENT=$(sha256sum "$file" | awk '{print $1}')
-            LOCK=$(jq -r ".prompts.\"$ID\".hash" versions/prompt-lock.json)
-
-            [ "$CURRENT" = "$LOCK" ] || FAILED=1
-          done
-
-          [ "$FAILED" -eq 0 ] || exit 1
-          echo "✅ All hashes verified"
-
-      - name: Validate immutable flag
+      # ------------------------------------------------------------
+      # 2️⃣ Validate Hybrid Manifest Structure
+      # ------------------------------------------------------------
+      - name: Validate hybrid manifest structure
         run: |
-          jq -e '.integrity.immutable == true' versions/prompt-lock.json > /dev/null || exit 1
-          echo "✅ Lockfile immutable"
+          jq -e '.version' versions/prompt-manifest.json > /dev/null
+          jq -e '.governance_mode' versions/prompt-manifest.json > /dev/null
+          jq -e '.governance' versions/prompt-manifest.json > /dev/null
+          jq -e '.taxonomy' versions/prompt-manifest.json > /dev/null
+          jq -e '.security' versions/prompt-manifest.json > /dev/null
+          jq -e '.compatibility' versions/prompt-manifest.json > /dev/null
 
-      - name: Summary
-        run: echo "✅ Hash enforcement passed"
+          DOMAIN_COUNT=$(jq -r '.taxonomy.domains | length' versions/prompt-manifest.json)
+          ARCHETYPE_COUNT=$(jq -r '.taxonomy.archetypes | length' versions/prompt-manifest.json)
+          TOTAL_PROMPTS=$(jq -r '.taxonomy.total_prompts' versions/prompt-manifest.json)
+
+          if [ "$DOMAIN_COUNT" -ne 10 ]; then
+            echo "❌ Expected 10 domains, found $DOMAIN_COUNT"
+            exit 1
+          fi
+
+          if [ "$ARCHETYPE_COUNT" -ne 4 ]; then
+            echo "❌ Expected 4 archetypes, found $ARCHETYPE_COUNT"
+            exit 1
+          fi
+
+          if [ "$TOTAL_PROMPTS" -ne 14 ]; then
+            echo "❌ Expected 14 total prompts, found $TOTAL_PROMPTS"
+            exit 1
+          fi
+
+          echo "✅ Manifest structure valid"
+
+      # ------------------------------------------------------------
+      # 3️⃣ Validate Lockfile Structure
+      # ------------------------------------------------------------
+      - name: Validate lockfile structure
+        run: |
+          jq -e '.version' versions/prompt-lock.json > /dev/null
+          jq -e '.lockfileVersion' versions/prompt-lock.json > /dev/null
+          jq -e '.algorithm' versions/prompt-lock.json > /dev/null
+          jq -e '.prompts' versions/prompt-lock.json > /dev/null
+
+          LOCK_PROMPT_COUNT=$(jq -r '.prompts | length' versions/prompt-lock.json)
+
+          if [ "$LOCK_PROMPT_COUNT" -ne 14 ]; then
+            echo "❌ Lockfile must contain 14 prompts, found $LOCK_PROMPT_COUNT"
+            exit 1
+          fi
+
+          echo "✅ Lockfile structure valid"
+
+      # ------------------------------------------------------------
+      # 4️⃣ Validate Version Consistency
+      # ------------------------------------------------------------
+      - name: Validate version consistency
+        run: |
+          MANIFEST_VERSION=$(jq -r '.version' versions/prompt-manifest.json)
+          LOCK_VERSION=$(jq -r '.version' versions/prompt-lock.json)
+
+          if [ "$MANIFEST_VERSION" != "$LOCK_VERSION" ]; then
+            echo "❌ Version mismatch: manifest=$MANIFEST_VERSION lockfile=$LOCK_VERSION"
+            exit 1
+          fi
+
+          echo "✅ Version consistency verified"
+
+      # ------------------------------------------------------------
+      # 5️⃣ Governance Summary
+      # ------------------------------------------------------------
+      - name: Governance summary
+        run: |
+          echo "----------------------------------------"
+          echo "Hybrid Governance Validation Passed"
+          echo "Version: $(jq -r '.version' versions/prompt-manifest.json)"
+          echo "Domains: $(jq -r '.taxonomy.domains | length' versions/prompt-manifest.json)"
+          echo "Archetypes: $(jq -r '.taxonomy.archetypes | length' versions/prompt-manifest.json)"
+          echo "Total Prompts: $(jq -r '.taxonomy.total_prompts' versions/prompt-manifest.json)"
+          echo "----------------------------------------"

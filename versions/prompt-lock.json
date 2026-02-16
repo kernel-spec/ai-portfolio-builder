@@ -1,9 +1,15 @@
 {
-  "version": "1.0.0",
-  "lockfileVersion": 1,
-  "generated": "2026-02-11T00:45:02Z",
-  "description": "Immutable hash registry for all governed prompts. Changes to this file require corresponding prompt version updates.",
+  "version": "1.1.0",
+  "lockfileVersion": 2,
+  "generated": "2026-02-16T00:00:00Z",
+  "description": "Immutable SHA-256 registry for all canonical AI system prompts. Worker and CI must enforce exact match.",
   "algorithm": "SHA-256",
+  "governance_mode": "hybrid",
+  "enforcement_layers": {
+    "ui_layer": "soft-validation",
+    "worker_layer": "hard-attestation",
+    "ci_layer": "strict-fail"
+  },
   "prompts": {
     "domain-01-content": {
       "file": "domains/domain-01-content.system.prompt.md",
@@ -65,9 +71,9 @@
       "type": "domain",
       "version": "1.0.0"
     },
-    "delivery-planner": {
-      "file": "archetypes/delivery-planner.system.prompt.md",
-      "hash": "f8c9f7a03e5d22aaaa94918087b1dedec8ab28ef320276140cf04f1e6f8f7911",
+    "product-thinker": {
+      "file": "archetypes/product-thinker.system.prompt.md",
+      "hash": "b662e466594c94ba6be41e7f598eea887cae6d6eca82c267a76b3767659b3a59",
       "type": "archetype",
       "version": "1.0.0"
     },
@@ -83,9 +89,9 @@
       "type": "archetype",
       "version": "1.0.0"
     },
-    "product-thinker": {
-      "file": "archetypes/product-thinker.system.prompt.md",
-      "hash": "b662e466594c94ba6be41e7f598eea887cae6d6eca82c267a76b3767659b3a59",
+    "delivery-planner": {
+      "file": "archetypes/delivery-planner.system.prompt.md",
+      "hash": "f8c9f7a03e5d22aaaa94918087b1dedec8ab28ef320276140cf04f1e6f8f7911",
       "type": "archetype",
       "version": "1.0.0"
     }
@@ -93,6 +99,7 @@
   "integrity": {
     "total_prompts": 14,
     "domains": 10,
-    "archetypes": 4
+    "archetypes": 4,
+    "verified": true
   }
 }

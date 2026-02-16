@@ -1,60 +1,62 @@
 {
   "version": "1.1.0",
 
+  "governance_mode": "hybrid",
+
   "governance": {
-    "mode": "hybrid",
     "ui_layer": "abstracted",
     "worker_layer": "hard-attestation",
     "ci_layer": "strict-validation"
   },
 
-  "domains": {
-    "domain-01-strategy": { "name": "Strategy" },
-    "domain-02-operations": { "name": "Operations" },
-    "domain-03-project-management": { "name": "Project Management" },
-    "domain-04-marketing": { "name": "Marketing" },
-    "domain-05-product": { "name": "Product" },
-    "domain-06-education": { "name": "Education" },
-    "domain-07-finance": { "name": "Finance" },
-    "domain-08-technology": { "name": "Technology" },
-    "domain-09-data": { "name": "Data" },
-    "domain-10-leadership": { "name": "Leadership" }
-  },
-
-  "archetypes": {
-    "product-thinker": {
-      "composition": {
-        "domain-05-product": 50,
-        "domain-01-strategy": 30,
-        "domain-09-data": 20
-      }
-    },
-    "growth-operator": {
-      "composition": {
-        "domain-04-marketing": 50,
-        "domain-02-operations": 30,
-        "domain-09-data": 20
-      }
-    },
-    "learning-designer": {
-      "composition": {
-        "domain-06-education": 50,
-        "domain-01-strategy": 25,
-        "domain-10-leadership": 25
-      }
-    },
-    "delivery-planner": {
-      "composition": {
-        "domain-03-project-management": 50,
-        "domain-02-operations": 30,
-        "domain-01-strategy": 20
-      }
-    }
-  },
-
   "taxonomy": {
-    "domains": 10,
-    "archetypes": 4,
+    "domains": {
+      "domain-01-strategy": {},
+      "domain-02-operations": {},
+      "domain-03-project-management": {},
+      "domain-04-marketing": {},
+      "domain-05-product": {},
+      "domain-06-education": {},
+      "domain-07-technology": {},
+      "domain-08-business": {},
+      "domain-09-finance": {},
+      "domain-10-leadership": {}
+    },
+
+    "archetypes": {
+      "product-thinker": {
+        "composition": {
+          "domain-05-product": 50,
+          "domain-01-strategy": 30,
+          "domain-03-project-management": 20
+        }
+      },
+
+      "growth-operator": {
+        "composition": {
+          "domain-04-marketing": 50,
+          "domain-08-business": 30,
+          "domain-09-finance": 20
+        }
+      },
+
+      "learning-designer": {
+        "composition": {
+          "domain-06-education": 50,
+          "domain-01-strategy": 30,
+          "domain-10-leadership": 20
+        }
+      },
+
+      "delivery-planner": {
+        "composition": {
+          "domain-03-project-management": 50,
+          "domain-02-operations": 30,
+          "domain-05-product": 20
+        }
+      }
+    },
+
     "total_prompts": 14,
     "immutability": true
   },

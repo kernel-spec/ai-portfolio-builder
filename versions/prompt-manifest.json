@@ -2,11 +2,30 @@
   "version": "1.0.0",
   "generated": "2026-02-11T00:45:02Z",
   "description": "Canonical manifest for all governed AI system prompts",
+
   "taxonomy": {
     "domains": 10,
     "archetypes": 4,
     "total_prompts": 14
   },
+
+  "prompts_index": [
+    "domain-01-content",
+    "domain-02-analysis",
+    "domain-03-project-management",
+    "domain-04-marketing",
+    "domain-05-product",
+    "domain-06-education",
+    "domain-07-personal",
+    "domain-08-business",
+    "domain-09-technical",
+    "domain-10-communication",
+    "product-thinker",
+    "growth-operator",
+    "learning-designer",
+    "delivery-planner"
+  ],
+
   "domains": {
     "domain-01-content": {
       "name": "Content Creation",
@@ -79,6 +98,7 @@
       "scope": "Effective communication, presentation design, public speaking, message delivery"
     }
   },
+
   "archetypes": {
     "product-thinker": {
       "name": "Product Thinker",
@@ -129,6 +149,7 @@
       "purpose": "Data-informed, technically-sound project delivery"
     }
   },
+
   "governance": {
     "immutable_domains": true,
     "hash_verification_required": true,

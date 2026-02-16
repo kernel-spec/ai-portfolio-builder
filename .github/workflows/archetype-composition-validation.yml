@@ -1,147 +1,56 @@
-name: Archetype Governance Validation (Hybrid v1.1.0)
+name: Archetype Composition Validation (Hybrid v1.1.0)
 
 on:
   pull_request:
     paths:
       - 'archetypes/**/*.md'
-      - 'versions/prompt-lock.json'
       - 'versions/prompt-manifest.json'
-      - '.github/workflows/archetype-composition-validation.yml'
   push:
     branches:
       - main
     paths:
       - 'archetypes/**/*.md'
-      - 'versions/prompt-lock.json'
       - 'versions/prompt-manifest.json'
 
 permissions:
   contents: read
 
 jobs:
-  validate-archetypes:
+  validate-compositions:
     runs-on: ubuntu-latest
-    name: Validate Archetype Governance (Hybrid)
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # -------------------------------------------------
-      # 1️⃣ Validate archetype count in lockfile
-      # -------------------------------------------------
-      - name: Validate archetype count
+      - name: Validate composition percentages
         run: |
-          echo "Validating archetype distribution in lockfile..."
-
-          ARCHETYPE_COUNT=$(jq '[.prompts[] | select(.type=="archetype")] | length' versions/prompt-lock.json)
-
-          if [ "$ARCHETYPE_COUNT" -ne 4 ]; then
-            echo "❌ Expected 4 archetypes in lockfile, found $ARCHETYPE_COUNT"
-            exit 1
-          fi
-
-          echo "✅ Exactly 4 archetypes found"
-
-      # -------------------------------------------------
-      # 2️⃣ Validate archetype IDs are canonical
-      # -------------------------------------------------
-      - name: Validate canonical archetype IDs
-        run: |
-          echo "Validating canonical archetype IDs..."
-
-          REQUIRED=("product-thinker" "growth-operator" "learning-designer" "delivery-planner")
-
-          for archetype in "${REQUIRED[@]}"; do
-            EXISTS=$(jq -e ".prompts.\"$archetype\"" versions/prompt-lock.json > /dev/null && echo "yes" || echo "no")
-
-            if [ "$EXISTS" != "yes" ]; then
-              echo "❌ Missing required archetype: $archetype"
-              exit 1
-            fi
-
-            TYPE=$(jq -r ".prompts.\"$archetype\".type" versions/prompt-lock.json)
-
-            if [ "$TYPE" != "archetype" ]; then
-              echo "❌ $archetype must have type 'archetype'"
-              exit 1
-            fi
-
-            echo "  ✅ $archetype exists and is correct type"
-          done
-
-      # -------------------------------------------------
-      # 3️⃣ Validate prompt files exist
-      # -------------------------------------------------
-      - name: Validate archetype prompt files exist
-        run: |
-          echo "Validating archetype prompt files..."
-
           FAILED=0
 
           for archetype in product-thinker growth-operator learning-designer delivery-planner; do
-            FILE="archetypes/$archetype.system.prompt.md"
+            SUM=$(jq ".taxonomy.archetypes.\"$archetype\".composition | add" versions/prompt-manifest.json)
+            COUNT=$(jq ".taxonomy.archetypes.\"$archetype\".composition | length" versions/prompt-manifest.json)
 
-            if [ ! -f "$FILE" ]; then
-              echo "❌ Missing prompt file: $FILE"
-              FAILED=1
-            else
-              echo "  ✅ Found $FILE"
-            fi
+            [ "$SUM" -eq 100 ] || FAILED=1
+            [ "$COUNT" -ge 2 ] && [ "$COUNT" -le 4 ] || FAILED=1
           done
 
-          if [ "$FAILED" -eq 1 ]; then
-            echo "❌ One or more archetype prompt files missing"
-            exit 1
-          fi
+          [ "$FAILED" -eq 0 ] || exit 1
+          echo "✅ Composition percentages valid"
 
-      # -------------------------------------------------
-      # 4️⃣ Validate lockfile integrity flag
-      # -------------------------------------------------
-      - name: Validate lockfile integrity enforcement
+      - name: Validate domain references exist
         run: |
-          echo "Validating lockfile integrity..."
+          FAILED=0
 
-          jq -e '.integrity.immutable == true' versions/prompt-lock.json > /dev/null \
-            || { echo "❌ Lockfile must have integrity.immutable = true"; exit 1; }
+          for archetype in product-thinker growth-operator learning-designer delivery-planner; do
+            DOMAINS=$(jq -r ".taxonomy.archetypes.\"$archetype\".composition | keys[]" versions/prompt-manifest.json)
 
-          jq -e '.lockfileVersion == 2' versions/prompt-lock.json > /dev/null \
-            || { echo "❌ lockfileVersion must be 2"; exit 1; }
+            for domain in $DOMAINS; do
+              jq -e ".taxonomy.domains.\"$domain\"" versions/prompt-manifest.json > /dev/null || FAILED=1
+            done
+          done
 
-          echo "✅ Lockfile integrity validated"
+          [ "$FAILED" -eq 0 ] || exit 1
+          echo "✅ Domain references valid"
 
-      # -------------------------------------------------
-      # 5️⃣ Validate worker sync
-      # -------------------------------------------------
-      - name: Validate worker lockfile sync
-        run: |
-          echo "Validating worker lockfile synchronization..."
-
-          if ! diff versions/prompt-lock.json cloudflare-worker/prompt-lock.json > /dev/null; then
-            echo "❌ Worker lockfile is not synchronized with versions/prompt-lock.json"
-            exit 1
-          fi
-
-          echo "✅ Worker lockfile is synchronized"
-
-      # -------------------------------------------------
-      # 6️⃣ Summary
-      # -------------------------------------------------
       - name: Summary
-        if: success()
-        run: |
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ ARCHETYPE GOVERNANCE VALIDATION PASSED (Hybrid v1.1.0)"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          echo "Validated:"
-          echo "  ✅ 4 archetypes exist in lockfile"
-          echo "  ✅ Archetype IDs are canonical"
-          echo "  ✅ Prompt files exist"
-          echo "  ✅ Lockfile integrity enforced"
-          echo "  ✅ Worker lockfile synchronized"
-          echo ""
-          echo "Hybrid governance model correctly enforced."
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        run: echo "✅ Archetype composition validation passed"

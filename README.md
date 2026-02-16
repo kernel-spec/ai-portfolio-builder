@@ -1,60 +1,62 @@
-AI Portfolio Builder
+# AI Portfolio Builder
 
-10-Domain Canonical Taxonomy for AI System Prompts
+## 10-Domain Canonical Taxonomy for AI System Prompts
 
-This repository contains a governed set of domain atoms and archetypes for building AI assistant capabilities with strict domain boundaries, cryptographic hash verification, and production-grade governance enforcement.
+This repository contains a **governed set of domain atoms and archetypes** for building AI assistant capabilities with strict domain boundaries, cryptographic hash verification, and production-grade governance enforcement.
 
-Version: 1.1.0
-Status: Enterprise-Grade, Hybrid Governance, Production-Ready
+**Version**: 1.1.0  
+**Status**: Enterprise-Grade, Hybrid Governance, Production-Ready
 
-⸻
+---
 
-Overview
+## Overview
 
 The taxonomy consists of:
-	•	10 Domain Atoms — Fundamental, single-responsibility canonical domains
-	•	4 Archetypes — Explicit multi-domain compositions
-	•	Hybrid Governance System — CI validation + runtime attestation
-	•	Cloudflare Worker Runtime — Production dispatch integrity enforcement
-	•	OpenAI Integration — Custom GPT configurations for all agents
+
+- **10 Domain Atoms** — Fundamental, single-responsibility canonical domains  
+- **4 Archetypes** — Explicit multi-domain compositions  
+- **Hybrid Governance System** — CI validation + runtime attestation  
+- **Cloudflare Worker Runtime** — Production dispatch integrity enforcement  
+- **OpenAI Integration** — Custom GPT configurations for all agents  
 
 This system is designed to be:
-	•	Atomic
-	•	Composable
-	•	Immutable-by-default
-	•	Cryptographically verifiable
-	•	Fail-closed secure
 
-⸻
+- Atomic  
+- Composable  
+- Immutable-by-default  
+- Cryptographically verifiable  
+- Fail-closed secure  
 
-Hybrid Governance Model (v1.1.0)
+---
 
-Version 1.1.0 introduces production-ready hybrid governance.
+# Hybrid Governance Model (v1.1.0)
 
-Attestation Model
+Version 1.1.0 introduces **production-ready hybrid governance**.
 
-Before (v1.0.0)
+## Attestation Model
 
+### Before (v1.0.0)
 Client provided:
 
 agent_id + prompt_hash + request_payload
 
-After (v1.1.0)
-
+### After (v1.1.0)
 Client provides:
 
 agent_id + request_payload
 
-Worker performs internal hash resolution and attestation using prompt-lock.json.
+Worker performs **internal hash resolution and attestation** using `prompt-lock.json`.
 
-⸻
+---
 
-Fail-Closed Security Behavior
-	•	Unknown agent → 403
-	•	Integrity failure → 500
-	•	Invalid JSON → 400
-	•	Success response →
+## Fail-Closed Security Behavior
 
+- Unknown agent → **403**
+- Integrity failure → **500**
+- Invalid JSON → **400**
+- Success response:
+
+```json
 { "response": "..." }
 
 (No metadata leakage)

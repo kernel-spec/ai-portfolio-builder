@@ -1,0 +1,160 @@
+name: Test Cloudflare Worker
+
+on:
+  pull_request:
+    paths:
+      - 'cloudflare-worker/**'
+      - 'versions/prompt-lock.json'
+      - '.github/workflows/test-worker.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'cloudflare-worker/**'
+      - 'versions/prompt-lock.json'
+
+permissions:
+  contents: read
+
+jobs:
+  test-worker:
+    runs-on: ubuntu-latest
+    name: Test Cloudflare Worker Runtime
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run worker runtime tests
+        working-directory: cloudflare-worker
+        run: |
+          echo "Running Cloudflare Worker runtime behavior tests..."
+          echo ""
+          
+          # Run tests with verbose output
+          npm test
+          
+          # Capture exit code
+          TEST_EXIT_CODE=$?
+          
+          if [ $TEST_EXIT_CODE -ne 0 ]; then
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "❌ WORKER TESTS FAILED"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "The Cloudflare Worker runtime behavior tests have failed."
+            echo "This indicates a critical issue with worker functionality."
+            echo ""
+            echo "Common causes:"
+            echo "  1. Hash verification logic broken"
+            echo "  2. JSON validation errors"
+            echo "  3. HTTP status code errors"
+            echo "  4. Security enforcement bypassed"
+            echo "  5. Prompt lock synchronization issues"
+            echo ""
+            echo "All worker tests must pass before merging."
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 1
+          fi
+
+      - name: Verify worker-lock synchronization
+        run: |
+          echo "Verifying prompt-lock.json synchronization..."
+          
+          # Compare canonical lock with worker lock
+          if ! diff versions/prompt-lock.json cloudflare-worker/prompt-lock.json > /dev/null; then
+            echo "❌ Lock file mismatch detected"
+            echo ""
+            echo "versions/prompt-lock.json and cloudflare-worker/prompt-lock.json"
+            echo "are not identical. These files must be byte-identical."
+            echo ""
+            echo "Differences found:"
+            diff versions/prompt-lock.json cloudflare-worker/prompt-lock.json || true
+            echo ""
+            exit 1
+          fi
+          
+          echo "✅ Lock files are synchronized"
+
+      - name: Verify worker structure
+        working-directory: cloudflare-worker
+        run: |
+          echo "Verifying worker file structure..."
+          
+          # Check required files exist
+          MISSING=0
+          
+          if [ ! -f "index.js" ]; then
+            echo "❌ Missing index.js"
+            MISSING=1
+          fi
+          
+          if [ ! -f "wrangler.toml" ]; then
+            echo "❌ Missing wrangler.toml"
+            MISSING=1
+          fi
+          
+          if [ ! -f "prompt-lock.json" ]; then
+            echo "❌ Missing prompt-lock.json"
+            MISSING=1
+          fi
+          
+          if [ ! -f "worker-runtime-behavior.test.js" ]; then
+            echo "❌ Missing worker-runtime-behavior.test.js"
+            MISSING=1
+          fi
+          
+          if [ $MISSING -eq 1 ]; then
+            echo ""
+            echo "❌ Required worker files are missing"
+            exit 1
+          fi
+          
+          echo "✅ All required worker files present"
+
+      - name: Validate worker configuration
+        working-directory: cloudflare-worker
+        run: |
+          echo "Validating wrangler.toml configuration..."
+          
+          # Check for required configuration
+          if ! grep -q "name = \"ai-portfolio-dispatcher\"" wrangler.toml; then
+            echo "❌ Invalid worker name in wrangler.toml"
+            exit 1
+          fi
+          
+          if ! grep -q "compatibility_date" wrangler.toml; then
+            echo "❌ Missing compatibility_date in wrangler.toml"
+            exit 1
+          fi
+          
+          if ! grep -q "nodejs_compat" wrangler.toml; then
+            echo "❌ Missing nodejs_compat flag in wrangler.toml"
+            exit 1
+          fi
+          
+          echo "✅ Worker configuration is valid"
+
+      - name: Summary
+        if: success()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ ALL WORKER TESTS PASSED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Worker validation results:"
+          echo "  ✅ Runtime behavior tests passed"
+          echo "  ✅ Lock file synchronization verified"
+          echo "  ✅ Worker file structure validated"
+          echo "  ✅ Worker configuration validated"
+          echo ""
+          echo "Worker is ready for deployment."
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -4,7 +4,7 @@
  * Mode: Strict Fail-Closed Governance Enforcement
  */
 
-import promptLock from './prompt-lock.json' with { type: 'json' };
+import promptLock from './prompt-lock.json';
 
 // --------------------------------------------------
 // HEADERS

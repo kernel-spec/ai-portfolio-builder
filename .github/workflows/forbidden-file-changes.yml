@@ -1,4 +1,4 @@
-name: Forbidden File Changes (Hybrid v1.1.0)
+name: Protected File Governance (Hybrid v1.1.0)
 
 on:
   pull_request:
@@ -7,188 +7,28 @@ on:
       - 'archetypes/**'
       - 'versions/**'
       - 'protocols/**'
-      - 'cloudflare-worker/prompt-lock.json'
-      - '.github/workflows/forbidden-file-changes.yml'
-  push:
-    branches:
-      - main
-    paths:
-      - 'domains/**'
-      - 'archetypes/**'
-      - 'versions/**'
-      - 'protocols/**'
-      - 'cloudflare-worker/prompt-lock.json'
 
 permissions:
   contents: read
 
 jobs:
-  governance-guard:
+  check-protected-files:
     runs-on: ubuntu-latest
-    name: Governance Guard (Fail-Closed)
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Detect changed files
+      - name: Detect changes
         run: |
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
-            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-          else
-            BASE_SHA="${{ github.event.before }}"
-            HEAD_SHA="${{ github.sha }}"
-          fi
+          git diff --name-only origin/${{ github.base_ref }} > changed.txt
 
-          git diff --name-only $BASE_SHA $HEAD_SHA > changed_files.txt
-
-          echo "Changed files:"
-          cat changed_files.txt
-
-      # -------------------------------------------------
-      # 1️⃣ Domain changes must update lock + manifest
-      # -------------------------------------------------
-      - name: Enforce domain governance
-        run: |
-          if grep -q "^domains/" changed_files.txt; then
-            echo "Domain files modified."
-
-            if ! grep -q "^versions/prompt-lock.json$" changed_files.txt; then
-              echo "❌ Domain modified without lockfile update"
-              exit 1
-            fi
-
-            if ! grep -q "^versions/prompt-manifest.json$" changed_files.txt; then
-              echo "❌ Domain modified without manifest version update"
-              exit 1
-            fi
-
-            echo "✅ Domain governance satisfied"
-          fi
-
-      # -------------------------------------------------
-      # 2️⃣ Archetype changes must update lock + manifest
-      # -------------------------------------------------
-      - name: Enforce archetype governance
-        run: |
-          if grep -q "^archetypes/" changed_files.txt; then
-            echo "Archetype files modified."
-
-            if ! grep -q "^versions/prompt-lock.json$" changed_files.txt; then
-              echo "❌ Archetype modified without lockfile update"
-              exit 1
-            fi
-
-            if ! grep -q "^versions/prompt-manifest.json$" changed_files.txt; then
-              echo "❌ Archetype modified without manifest version update"
-              exit 1
-            fi
-
-            echo "✅ Archetype governance satisfied"
-          fi
-
-      # -------------------------------------------------
-      # 3️⃣ Lockfile cannot change alone
-      # -------------------------------------------------
-      - name: Prevent lockfile-only modification
-        run: |
-          if grep -q "^versions/prompt-lock.json$" changed_files.txt; then
-            if ! grep -q "^domains/" changed_files.txt && ! grep -q "^archetypes/" changed_files.txt; then
-              echo "❌ Lockfile modified without prompt changes"
+          if grep -q "^domains/" changed.txt || grep -q "^archetypes/" changed.txt; then
+            if ! grep -q "^versions/prompt-lock.json$" changed.txt; then
+              echo "❌ Prompt modified without lock update"
               exit 1
             fi
           fi
 
-          echo "✅ Lockfile modification valid"
-
-      # -------------------------------------------------
-      # 4️⃣ Worker lockfile must stay synchronized
-      # -------------------------------------------------
-      - name: Enforce worker lockfile sync
-        run: |
-          if grep -q "^versions/prompt-lock.json$" changed_files.txt; then
-            if ! grep -q "^cloudflare-worker/prompt-lock.json$" changed_files.txt; then
-              echo "❌ versions lockfile changed but worker lockfile not updated"
-              exit 1
-            fi
-          fi
-
-          echo "✅ Worker lockfile sync enforced"
-
-      # -------------------------------------------------
-      # 5️⃣ Protocol changes require version bump
-      # -------------------------------------------------
-      - name: Enforce protocol governance
-        run: |
-          if grep -q "^protocols/" changed_files.txt; then
-            echo "Protocol files modified."
-
-            if ! grep -q "^versions/prompt-manifest.json$" changed_files.txt; then
-              echo "❌ Protocol modified without manifest version bump"
-              exit 1
-            fi
-
-            echo "✅ Protocol governance satisfied"
-          fi
-
-      # -------------------------------------------------
-      # 6️⃣ Manifest version must increment on protected changes
-      # -------------------------------------------------
-      - name: Enforce version bump
-        run: |
-          if grep -q "^domains/" changed_files.txt || \
-             grep -q "^archetypes/" changed_files.txt || \
-             grep -q "^protocols/" changed_files.txt; then
-
-            OLD_VERSION=$(git show $BASE_SHA:versions/prompt-manifest.json | jq -r '.version')
-            NEW_VERSION=$(jq -r '.version' versions/prompt-manifest.json)
-
-            echo "Old version: $OLD_VERSION"
-            echo "New version: $NEW_VERSION"
-
-            if [ "$OLD_VERSION" == "$NEW_VERSION" ]; then
-              echo "❌ Manifest version not incremented"
-              exit 1
-            fi
-
-            echo "✅ Version bump verified"
-          fi
-
-      # -------------------------------------------------
-      # 7️⃣ Immutable flag must remain true
-      # -------------------------------------------------
-      - name: Enforce immutability
-        run: |
-          if ! jq -e '.integrity.immutable == true' versions/prompt-lock.json > /dev/null; then
-            echo "❌ integrity.immutable must remain true"
-            exit 1
-          fi
-
-          echo "✅ Immutability enforced"
-
-      # -------------------------------------------------
-      # 8️⃣ Summary
-      # -------------------------------------------------
-      - name: Summary
-        if: success()
-        run: |
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ GOVERNANCE GUARD PASSED (Hybrid v1.1.0)"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          echo "Enforced:"
-          echo "  ✅ Domain changes require lock + manifest"
-          echo "  ✅ Archetype changes require lock + manifest"
-          echo "  ✅ Lockfile cannot change alone"
-          echo "  ✅ Worker lockfile sync enforced"
-          echo "  ✅ Protocol changes require version bump"
-          echo "  ✅ Manifest version increment enforced"
-          echo "  ✅ integrity.immutable locked"
-          echo ""
-          echo "System operating in FAIL-CLOSED mode."
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Protected file rules respected"

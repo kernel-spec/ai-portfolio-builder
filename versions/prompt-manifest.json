@@ -1,39 +1,35 @@
 {
   "version": "1.1.0",
   "governance_mode": "hybrid",
+
   "hash_enforcement": {
     "ui_layer": "soft-validation",
     "worker_layer": "hard-attestation",
-    "ci_layer": "strict-verification"
+    "ci_layer": "mandatory"
   },
-  "ui_runtime": {
-    "platform": "chatgpt-ios-custom-gpt",
-    "enforcement": "logical-boundary-check",
-    "cryptographic_verification": false
-  },
-  "worker_runtime": {
-    "attestation_required": true,
-    "fail_mode": "closed",
-    "cryptographic_hash_validation": true
-  },
-  "ci_enforcement": {
-    "hash_mismatch": "fail",
-    "unknown_agent": "fail",
-    "schema_violation": "fail",
-    "ui_soft_validation_mismatch": "warn"
-  },
+
   "taxonomy": {
     "domains": 10,
     "archetypes": 4,
     "immutability": true
   },
+
   "security": {
-    "source_of_truth": "github-repository",
-    "lock_file_required": true,
-    "attestation_required_for_production_dispatch": true
+    "attestation_required_for_production_dispatch": true,
+    "fail_closed": true,
+    "unknown_agent_blocked": true,
+    "runtime_hash_verification": true
   },
+
   "compatibility": {
-    "minimum_worker_version": "1.0.0",
-    "minimum_ci_version": "1.0.0"
+    "custom_gpt_runtime": "supported",
+    "ios_runtime": "supported",
+    "openapi_dispatch": "required"
+  },
+
+  "audit": {
+    "lock_file_required": true,
+    "ci_hash_validation": true,
+    "worker_logging_enabled": true
   }
 }

@@ -1,23 +1,98 @@
 {
   "version": "1.1.0",
+
   "governance": {
     "mode": "hybrid",
     "ui_layer": "abstracted",
     "worker_layer": "hard-attestation",
-    "ci_layer": "strict-validation"
+    "ci_layer": "strict-validation",
+    "fail_closed": true,
+    "attestation_required_for_production_dispatch": true
   },
+
+  "compatibility": {
+    "lockfile_version": 2,
+    "minimum_worker_version": "1.1.0"
+  },
+
   "taxonomy": {
     "domains": 10,
     "archetypes": 4,
     "total_prompts": 14,
     "immutability": true
   },
-  "security": {
-    "attestation_required_for_production_dispatch": true,
-    "fail_closed": true
+
+  "domains": {
+    "domain-01-content": {
+      "name": "Content",
+      "type": "domain"
+    },
+    "domain-02-analysis": {
+      "name": "Analysis",
+      "type": "domain"
+    },
+    "domain-03-project-management": {
+      "name": "Project Management",
+      "type": "domain"
+    },
+    "domain-04-marketing": {
+      "name": "Marketing",
+      "type": "domain"
+    },
+    "domain-05-product": {
+      "name": "Product",
+      "type": "domain"
+    },
+    "domain-06-education": {
+      "name": "Education",
+      "type": "domain"
+    },
+    "domain-07-technology": {
+      "name": "Technology",
+      "type": "domain"
+    },
+    "domain-08-business": {
+      "name": "Business",
+      "type": "domain"
+    },
+    "domain-09-operations": {
+      "name": "Operations",
+      "type": "domain"
+    },
+    "domain-10-communication": {
+      "name": "Communication",
+      "type": "domain"
+    }
   },
-  "compatibility": {
-    "lockfile_version": 2,
-    "minimum_worker_version": "1.1.0"
+
+  "archetypes": {
+    "product-thinker": {
+      "composition": {
+        "domain-05-product": 50,
+        "domain-02-analysis": 30,
+        "domain-08-business": 20
+      }
+    },
+    "growth-operator": {
+      "composition": {
+        "domain-04-marketing": 50,
+        "domain-08-business": 30,
+        "domain-10-communication": 20
+      }
+    },
+    "learning-designer": {
+      "composition": {
+        "domain-06-education": 50,
+        "domain-01-content": 30,
+        "domain-02-analysis": 20
+      }
+    },
+    "delivery-planner": {
+      "composition": {
+        "domain-03-project-management": 50,
+        "domain-08-business": 30,
+        "domain-02-analysis": 20
+      }
+    }
   }
 }

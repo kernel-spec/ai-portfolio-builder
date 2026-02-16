@@ -1,6 +1,6 @@
 # cloudflare-worker/wrangler.toml
 
-name = "ai-portfolio-dispatcher"
+name = "ai-portfolio-builder"
 main = "index.js"
 account_id = "e506d2ef2602866c8b18942256a5b3b2"
 

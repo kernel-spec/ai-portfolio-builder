@@ -94,11 +94,11 @@ Comprehensive validation across all 12 forensic phases:
 | 4.1 | Prompt Entry Count | ✅ PASS | 14 entries in lock file (10+4) |
 | 4.2 | SHA-256 Hash Verification | ✅ PASS | All 14 hashes verified, 0 duplicates |
 | 4.3 | Cloudflare Lock Sync | ✅ PASS | Byte-identical to canonical lock |
-| 5.1 | Manifest Schema Integrity | ✅ PASS | All fields valid (v1.0.0) |
+| 5.1 | Manifest Schema Integrity | ✅ PASS | All fields valid (v1.1.0) |
 | 6 | Archetype Composition Math | ✅ PASS | All 4 archetypes sum to 100% |
 | 7.1 | OpenAI GPT Config Count | ✅ PASS | 15 configs (10+4+1) |
 | 8 | CI Enforcement Workflows | ✅ PASS | All 4 workflows present with valid YAML |
-| 9 | Version/Tag Synchronization | ✅ PASS | Version 1.0.0 documented |
+| 9 | Version/Tag Synchronization | ✅ PASS | Version 1.1.0 documented |
 | 10 | CHANGELOG Forensic Sync | ✅ PASS | Version section present with date |
 | 11 | README Cross-Verification | ✅ PASS | Structure references verified |
 | 12 | Duplicate/Collision Audit | ✅ PASS | Zero duplicates detected |
@@ -124,7 +124,7 @@ All forensic validation phases passed. No remediation required.
 - Forbidden file changes workflow active
 
 **Version Control:** ✅ Compliant
-- Version consistency across all artifacts (1.0.0)
+- Version consistency across all artifacts (1.1.0)
 - CHANGELOG synchronized with version
 - Manifest and lock files aligned
 
@@ -137,7 +137,7 @@ All forensic validation phases passed. No remediation required.
 
 While all validations passed, consider these enhancements:
 
-1. **Git Tagging**: Create annotated tag `v1.0.0` for the current release
+1. **Git Tagging**: Create annotated tag `v1.1.0` for the current release
 2. **Continuous Monitoring**: Schedule automated forensic audits on merge
 3. **YAML Linting**: Address style warnings (trailing spaces, line length) in workflows
 4. **Branch Protection**: Configure GitHub branch protection rules to complement CI workflows
@@ -277,32 +277,35 @@ diff versions/prompt-lock.json cloudflare-worker/prompt-lock.json
 
 **Objective:** Validate JSON schema with exact field requirements
 
-**Required Fields:**
-- `version` (string)
-- `taxonomy.domains` = 10
-- `taxonomy.archetypes` = 4  
-- `taxonomy.total_prompts` = 14
-- `domains` object with 10 entries
-- `archetypes` object with 4 entries
-- All `governance` flags = true
+**Required Fields (v1.1.0 Format):**
+- `version` = "1.1.0" (string)
+- `governance_mode` = "hybrid"
+- `hash_enforcement` object (ui_layer, worker_layer, ci_layer)
+- `ui_runtime` object (platform, enforcement, cryptographic_verification)
+- `worker_runtime` object (attestation_required, fail_mode, cryptographic_hash_validation)
+- `ci_enforcement` object (hash_mismatch, unknown_agent, schema_violation, ui_soft_validation_mismatch)
+- `taxonomy` object with:
+  - `domains` = 10
+  - `archetypes` = 4
+  - `immutability` = true
+- `security` object (source_of_truth, lock_file_required, attestation_required_for_production_dispatch)
+- `compatibility` object (minimum_worker_version, minimum_ci_version)
 
 **Commands:**
 ```bash
 jq '.version' versions/prompt-manifest.json
 jq '.taxonomy' versions/prompt-manifest.json
-jq '.governance' versions/prompt-manifest.json
+jq '.governance_mode' versions/prompt-manifest.json
+jq '.security' versions/prompt-manifest.json
 ```
 
 **Result:** ✅ **PASS**
-- Version: 1.0.0
-- Taxonomy counts all correct (10, 4, 14)
-- Domain entries: 10 (matches count)
-- Archetype entries: 4 (matches count)
-- All governance flags: true
-  - `immutable_domains: true`
-  - `hash_verification_required: true`
-  - `version_increment_required: true`
-  - `archetype_composition_validation: true`
+- Version: 1.1.0
+- Governance mode: hybrid
+- Taxonomy counts correct (10 domains, 4 archetypes)
+- Hash enforcement configured for all layers (UI, Worker, CI)
+- Security attestation required for production dispatch
+- Compatibility requirements defined
 
 ---
 
@@ -388,7 +391,7 @@ python3 -c "import yaml; yaml.safe_load(open('.github/workflows/[file]'))"
 
 **Objective:** Validate version consistency with git tags
 
-**Manifest Version:** 1.0.0
+**Manifest Version:** 1.1.0
 
 **Commands:**
 ```bash
@@ -397,7 +400,7 @@ git tag -l
 ```
 
 **Result:** ✅ **PASS**
-- Version 1.0.0 documented in manifest
+- Version 1.1.0 documented in manifest
 - Note: Git tag not yet created (expected for new versions)
 
 ---
@@ -407,19 +410,19 @@ git tag -l
 **Objective:** Validate CHANGELOG has version section with date
 
 **Required Elements:**
-- Version header (## [1.0.0] or ## 1.0.0)
+- Version header (## [1.1.0] or ## 1.1.0)
 - Date in format YYYY-MM-DD
 - Entry content
 
 **Commands:**
 ```bash
-grep "## 1.0.0\|## \[1.0.0\]" CHANGELOG.md
-grep -A2 "## 1.0.0" CHANGELOG.md | grep "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]"
+grep "## 1.1.0\|## \[1.1.0\]" CHANGELOG.md
+grep -A2 "## 1.1.0" CHANGELOG.md | grep "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]"
 ```
 
 **Result:** ✅ **PASS**
 - CHANGELOG.md exists (213 lines)
-- Version 1.0.0 section present
+- Version 1.1.0 section present
 - Date formatted correctly
 - Comprehensive entries documented
 
@@ -460,7 +463,7 @@ grep -i "archetype" README.md
 
 **Commands:**
 ```bash
-jq -r '.domains | keys[], .archetypes | keys[]' versions/prompt-manifest.json | sort | uniq -d
+jq -r '.prompts | keys[]' versions/prompt-lock.json | sort | uniq -d
 jq -r '.prompts | .[] | .hash' versions/prompt-lock.json | sort | uniq -d
 ```
 

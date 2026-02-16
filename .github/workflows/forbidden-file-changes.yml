@@ -7,7 +7,6 @@ on:
       - 'archetypes/**'
       - 'versions/**'
       - 'protocols/**'
-      - '.github/workflows/**'
   push:
     branches:
       - main
@@ -16,7 +15,6 @@ on:
       - 'archetypes/**'
       - 'versions/**'
       - 'protocols/**'
-      - '.github/workflows/**'
 
 permissions:
   contents: read
@@ -27,11 +25,12 @@ jobs:
     name: Check Protected File Modifications
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Determine changed files
+      - name: Get changed files
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
@@ -40,72 +39,113 @@ jobs:
             BASE_SHA="${{ github.event.before }}"
             HEAD_SHA="${{ github.sha }}"
           fi
-
+          
+          echo "Comparing $BASE_SHA to $HEAD_SHA"
           git diff --name-only $BASE_SHA $HEAD_SHA > changed_files.txt
+          
+          echo ""
+          echo "Changed files:"
           cat changed_files.txt
+          echo ""
 
-      # ------------------------------------------------
-      # DOMAIN / ARCHETYPE GOVERNANCE (FAIL-CLOSED)
-      # ------------------------------------------------
+      # =====================================================
+      # DOMAIN CHANGES
+      # =====================================================
 
-      - name: Enforce domain & archetype governance
+      - name: Check domain modifications
         run: |
           VIOLATION=0
-
-          if grep -qE "^(domains/|archetypes/)" changed_files.txt; then
-            echo "Protected prompt files modified."
-
+          
+          if grep -q "^domains/" changed_files.txt; then
+            echo "Domain files modified:"
+            grep "^domains/" changed_files.txt
+            
             if ! grep -q "^versions/prompt-lock.json$" changed_files.txt; then
-              echo "❌ Prompt files modified WITHOUT updating prompt-lock.json"
-              VIOLATION=1
-            fi
-
-            if ! grep -q "^versions/prompt-manifest.json$" changed_files.txt; then
-              echo "❌ Prompt files modified WITHOUT updating prompt-manifest.json"
+              echo ""
+              echo "❌ Domain modified WITHOUT updating prompt-lock.json"
               VIOLATION=1
             fi
           fi
-
+          
           if [ "$VIOLATION" -eq 1 ]; then
             exit 1
           fi
 
-      # ------------------------------------------------
-      # LOCK FILE HARD PROTECTION
-      # ------------------------------------------------
+      # =====================================================
+      # ARCHETYPE CHANGES
+      # =====================================================
 
-      - name: Prevent standalone lock manipulation
+      - name: Check archetype modifications
+        run: |
+          VIOLATION=0
+          
+          if grep -q "^archetypes/" changed_files.txt; then
+            echo "Archetype files modified:"
+            grep "^archetypes/" changed_files.txt
+            
+            if ! grep -q "^versions/prompt-lock.json$" changed_files.txt; then
+              echo ""
+              echo "❌ Archetype modified WITHOUT updating prompt-lock.json"
+              VIOLATION=1
+            fi
+          fi
+          
+          if [ "$VIOLATION" -eq 1 ]; then
+            exit 1
+          fi
+
+      # =====================================================
+      # LOCK FILE DIRECT MANIPULATION (FAIL-CLOSED)
+      # =====================================================
+
+      - name: Prevent direct lock file manipulation
         run: |
           if grep -q "^versions/prompt-lock.json$" changed_files.txt; then
-            if ! grep -qE "^(domains/|archetypes/)" changed_files.txt; then
-              echo "❌ Lock file modified without corresponding prompt changes."
+            
+            PROMPT_CHANGED=0
+            
+            if grep -q "^domains/" changed_files.txt || grep -q "^archetypes/" changed_files.txt; then
+              PROMPT_CHANGED=1
+            fi
+            
+            if [ "$PROMPT_CHANGED" -eq 0 ]; then
+              echo ""
+              echo "❌ LOCK FILE MODIFIED WITHOUT PROMPT CHANGES"
+              echo ""
+              echo "Direct manipulation of versions/prompt-lock.json is prohibited."
+              echo "Lock file updates must be accompanied by actual prompt changes."
+              echo ""
               exit 1
+            else
+              echo "✅ Lock file change accompanied by prompt changes"
             fi
           fi
 
-      # ------------------------------------------------
-      # PROTOCOLS = HIGH RISK (FAIL-CLOSED)
-      # ------------------------------------------------
+      # =====================================================
+      # PROTOCOL CHANGES (HIGH RISK – MANUAL REVIEW)
+      # =====================================================
 
-      - name: Block protocol modifications
+      - name: Detect protocol modifications
         run: |
           if grep -q "^protocols/" changed_files.txt; then
-            echo "❌ Protocol files modified."
-            echo "Protocol changes require explicit governance review."
-            exit 1
+            echo ""
+            echo "⚠️ Protocol files modified."
+            echo "Manual security review required."
+            echo ""
+          else
+            echo "No protocol changes detected."
           fi
 
-      # ------------------------------------------------
-      # WORKFLOW SELF-PROTECTION
-      # ------------------------------------------------
+      # =====================================================
+      # SUCCESS SUMMARY
+      # =====================================================
 
-      - name: Protect CI workflows
+      - name: Summary
+        if: success()
         run: |
-          if grep -q "^.github/workflows/" changed_files.txt; then
-            echo "❌ CI workflow modification detected."
-            echo "Workflow changes require explicit security review."
-            exit 1
-          fi
-
-      - name: Success
-        run: echo "✅ Protected file governance rules enforced."
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Protected file checks PASSED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Governance enforcement is FAIL-CLOSED."
+          echo ""

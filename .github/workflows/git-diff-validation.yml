@@ -1,0 +1,62 @@
+name: Git Diff Validation
+
+on:
+  pull_request:
+    paths:
+      - 'versions/**'
+      - 'domains/**'
+      - 'archetypes/**'
+      - '.github/workflows/git-diff-validation.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'versions/**'
+      - 'domains/**'
+      - 'archetypes/**'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-changes:
+    runs-on: ubuntu-latest
+    name: Validate Changes to Governed Directories
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for git diff
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Run git diff validator
+        run: |
+          # For pull requests, compare against base branch
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+            HEAD_REF="${{ github.event.pull_request.head.sha }}"
+            echo "Comparing PR changes: $BASE_REF → $HEAD_REF"
+            node git-diff-validator.js "$BASE_REF" "$HEAD_REF"
+          else
+            # For pushes, compare HEAD~1 to HEAD
+            echo "Comparing push changes: HEAD~1 → HEAD"
+            node git-diff-validator.js HEAD~1 HEAD
+          fi
+      
+      - name: Run validator tests
+        run: |
+          echo "Running validator test suite..."
+          node test-git-diff-validator.js
+      
+      - name: Summary
+        if: success()
+        run: |
+          echo "✓ All git diff validations passed"
+          echo "✓ Hash synchronization verified"
+          echo "✓ Archetype compositions valid"
+          echo "✓ Manifest consistency confirmed"

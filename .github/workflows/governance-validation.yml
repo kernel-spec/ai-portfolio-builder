@@ -48,8 +48,8 @@ jobs:
           jq -e '.security' versions/prompt-manifest.json > /dev/null
           jq -e '.compatibility' versions/prompt-manifest.json > /dev/null
 
-          DOMAIN_COUNT=$(jq '.taxonomy.domains' versions/prompt-manifest.json)
-          ARCHETYPE_COUNT=$(jq '.taxonomy.archetypes' versions/prompt-manifest.json)
+          DOMAIN_COUNT=$(jq '.taxonomy.domains | length' versions/prompt-manifest.json)
+          ARCHETYPE_COUNT=$(jq '.taxonomy.archetypes | length' versions/prompt-manifest.json)
           TOTAL_PROMPTS=$(jq '.taxonomy.total_prompts' versions/prompt-manifest.json)
 
           [ "$DOMAIN_COUNT" -eq 10 ] || { echo "❌ Expected 10 domains"; exit 1; }

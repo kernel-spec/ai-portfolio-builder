@@ -300,7 +300,7 @@ jq '.security' versions/prompt-manifest.json
 ```
 
 **Result:** ✅ **PASS**
-- Version: 1.1.0 (updated from verbose v1.0.0 format)
+- Version: 1.1.0
 - Governance mode: hybrid
 - Taxonomy counts correct (10 domains, 4 archetypes)
 - Hash enforcement configured for all layers (UI, Worker, CI)

@@ -2,8 +2,10 @@
   "version": "1.1.0",
   "lockfileVersion": 2,
   "generated": "2026-02-16T00:00:00Z",
-  "description": "Immutable SHA-256 registry for all governed AI system prompts. Any modification requires manifest version increment.",
   "algorithm": "SHA-256",
+  "runtime_attestation": true,
+  "source": "embedded-lock-registry"
+  "description": "Immutable hash registry for canonical agents",
   "prompts": {
     "domain-01-content": {
       "file": "domains/domain-01-content.system.prompt.md",
@@ -94,6 +96,6 @@
     "total_prompts": 14,
     "domains": 10,
     "archetypes": 4,
-    "checksum_policy": "fail-closed"
+    "immutable": true
   }
 }

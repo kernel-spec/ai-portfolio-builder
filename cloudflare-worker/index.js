@@ -27,7 +27,8 @@ const CORS_HEADERS = {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    const { method, pathname } = url;
+    const { pathname } = url;
+    const { method } = request;
 
     // CORS preflight
     if (method === 'OPTIONS') {
@@ -258,3 +259,14 @@ function verifyPromptHash(agentId, promptHash) {
     },
   };
 }
+
+// --------------------------------------------------
+// NAMED EXPORTS FOR TESTING
+// --------------------------------------------------
+
+export {
+  handleDispatch,
+  verifyPromptHash,
+  validateRequest,
+  methodNotAllowed
+};

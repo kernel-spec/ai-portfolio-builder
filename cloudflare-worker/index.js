@@ -4,6 +4,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // ===============================
+    // HEALTH ENDPOINT
+    // ===============================
     if (url.pathname === "/health") {
       return new Response(JSON.stringify({
         status: "healthy",
@@ -17,7 +20,11 @@ export default {
       });
     }
 
+    // ===============================
+    // DISPATCH ENDPOINT
+    // ===============================
     if (url.pathname === "/dispatch") {
+
       if (request.method !== "POST") {
         return new Response("Method Not Allowed", { status: 405 });
       }
@@ -43,15 +50,60 @@ export default {
 
       const systemPrompt = agent.system_prompt;
 
-      const openaiResponse = await callOpenAI(systemPrompt, request_payload, env);
+      try {
+        const openaiResponse = await callOpenAI(
+          systemPrompt,
+          request_payload,
+          env
+        );
 
-      return new Response(JSON.stringify({
-        response: openaiResponse
-      }), {
-        headers: { "Content-Type": "application/json" }
-      });
+        return new Response(JSON.stringify({
+          response: openaiResponse
+        }), {
+          headers: { "Content-Type": "application/json" }
+        });
+
+      } catch {
+        return new Response("Integrity failure", { status: 500 });
+      }
     }
 
     return new Response("Not Found", { status: 404 });
   }
 };
+
+
+// =====================================
+// Hardened OpenAI Call
+// =====================================
+
+async function callOpenAI(systemPrompt, userPayload, env) {
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${env.OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: env.OPENAI_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify(userPayload) }
+      ],
+      temperature: 0
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error("OpenAI request failed");
+  }
+
+  const data = await response.json();
+
+  if (!data.choices || !data.choices[0]) {
+    throw new Error("Malformed OpenAI response");
+  }
+
+  return data.choices[0].message.content;
+}

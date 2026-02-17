@@ -1,8 +1,55 @@
 {
   "version": "1.1.0",
-  "domains_count": 10,
-  "archetypes_count": 4,
-  "integrity_model": "sha256",
-  "attestation": "runtime-internal",
-  "fail_closed": true
+  "registry": "ai-portfolio-builder",
+  "governance_mode": "immutable-registry",
+  "description": "Canonical prompt registry manifest for AI Portfolio Builder production system.",
+  "generated": "2026-02-17T00:00:00Z",
+
+  "taxonomy": {
+    "total_prompts": 14,
+    "domains": 10,
+    "archetypes": 4,
+
+    "domain_ids": [
+      "domain-01-content",
+      "domain-02-analysis",
+      "domain-03-project-management",
+      "domain-04-marketing",
+      "domain-05-product",
+      "domain-06-education",
+      "domain-07-personal",
+      "domain-08-business",
+      "domain-09-technical",
+      "domain-10-communication"
+    ],
+
+    "archetype_ids": [
+      "product-thinker",
+      "growth-operator",
+      "learning-designer",
+      "delivery-planner"
+    ]
+  },
+
+  "composition_rules": {
+    "archetype_must_equal_100_percent": true,
+    "no_domain_overlap_outside_declared_composition": true,
+    "single_source_of_truth_lockfile": "/versions/prompt-lock.json",
+    "runtime_lockfile_copy": "/cloudflare-worker/prompt-lock.json"
+  },
+
+  "security": {
+    "algorithm": "sha256",
+    "lockfile_required": true,
+    "immutable_registry": true,
+    "runtime_hash_verification": true,
+    "fail_closed_on_unknown_agent": true
+  },
+
+  "compatibility": {
+    "worker_runtime": "cloudflare-workers",
+    "openai_execution_model": "gpt-4o-mini",
+    "schema_validation": "strict-json-schema",
+    "ci_enforced": true
+  }
 }

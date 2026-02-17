@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-02-14T14:32:18.233Z",
-  "total": 44,
-  "passed": 44,
-  "failed": 0,
-  "passRate": "100.0",
+  "timestamp": "2026-02-17T14:26:02.989Z",
+  "total": 39,
+  "passed": 31,
+  "failed": 8,
+  "passRate": "79.5",
   "results": [
     {
       "test": "Worker code loads successfully",
@@ -19,7 +19,7 @@
     },
     {
       "test": "Worker imports prompt-lock.json",
-      "passed": true
+      "passed": false
     },
     {
       "test": "Enforces POST method requirement",
@@ -35,7 +35,7 @@
     },
     {
       "test": "Has hash verification function",
-      "passed": true
+      "passed": false
     },
     {
       "test": "Returns 403 on security failures",
@@ -47,11 +47,11 @@
     },
     {
       "test": "Success response follows hash verification",
-      "passed": true
+      "passed": false
     },
     {
       "test": "Uses static import for prompt-lock.json",
-      "passed": true
+      "passed": false
     },
     {
       "test": "Does not use eval()",
@@ -75,7 +75,7 @@
     },
     {
       "test": "Has GET request handling",
-      "passed": true
+      "passed": false
     },
     {
       "test": "Has OPTIONS request handling",
@@ -138,32 +138,12 @@
       "passed": true
     },
     {
-      "test": "Workflow has workingDirectory configured",
-      "passed": true
-    },
-    {
-      "test": "workingDirectory points to cloudflare-worker",
-      "passed": true
-    },
-    {
-      "test": "Uses wrangler-action@v3",
-      "passed": true
-    },
-    {
-      "test": "Account ID is specified",
-      "passed": true
-    },
-    {
-      "test": "References CLOUDFLARE_API_TOKEN secret",
-      "passed": true
-    },
-    {
-      "test": "Account IDs match between workflow and wrangler.toml",
-      "passed": true
+      "test": "Workflow configuration check failed: ENOENT: no such file or directory, open '/home/runner/work/ai-portfolio-builder/ai-portfolio-builder/.github/workflows/cloudflare-deploy.yml'",
+      "passed": false
     },
     {
       "test": "Has account_id configured",
-      "passed": true
+      "passed": false
     },
     {
       "test": "Has compatibility_date set",
@@ -171,7 +151,7 @@
     },
     {
       "test": "Has nodejs_compat flag enabled",
-      "passed": true
+      "passed": false
     },
     {
       "test": "Has main entry point specified",

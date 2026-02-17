@@ -1,6 +1,5 @@
 import lock from "./prompt-lock.json" with { type: "json" };
 
-const OPENAI_API_KEY = globalThis.OPENAI_API_KEY;
 const SERVICE_VERSION = "1.2.0";
 
 const CORS_HEADERS = {
@@ -22,14 +21,19 @@ function error(status, message) {
 }
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
 
+    // -----------------------------
+    // CORS
+    // -----------------------------
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 200, headers: CORS_HEADERS });
     }
 
+    // -----------------------------
     // HEALTH
+    // -----------------------------
     if (url.pathname === "/health" && request.method === "GET") {
       return json({
         status: "healthy",
@@ -41,7 +45,9 @@ export default {
       });
     }
 
+    // -----------------------------
     // DISPATCH
+    // -----------------------------
     if (url.pathname === "/dispatch") {
       if (request.method !== "POST") {
         return error(405, "Method not allowed");
@@ -65,22 +71,17 @@ export default {
       }
 
       const agent = lock.prompts[agent_id];
+
       if (!agent) {
         return json(
-          {
-            error: "Unknown agent",
-            security_flag: true
-          },
+          { error: "Unknown agent", security_flag: true },
           403
         );
       }
 
       if (!lock.integrity?.immutable) {
         return json(
-          {
-            error: "Lockfile integrity violation",
-            security_flag: true
-          },
+          { error: "Lockfile integrity violation", security_flag: true },
           500
         );
       }
@@ -96,7 +97,7 @@ export default {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`
+            Authorization: `Bearer ${env.OPENAI_API_KEY}`
           },
           body: JSON.stringify({
             model: agent.model || "gpt-4o-mini",

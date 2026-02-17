@@ -1,182 +1,83 @@
 import lockfile from "./prompt-lock.json";
 
-/**
- * Utility: generate deterministic dispatch ID
- */
-function generateDispatchId() {
-  return crypto.randomUUID();
-}
-
-/**
- * Utility: JSON response wrapper
- */
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
-}
-
-/**
- * Utility: structured error response
- */
-function errorResponse(code, message, securityFlag = false, status = 400) {
-  return jsonResponse(
-    {
-      success: false,
-      error: code,
-      reason: message,
-      security_flag: securityFlag
-    },
-    status
-  );
-}
-
-/**
- * OpenAI hardened call
- */
-async function callOpenAI(env, systemPrompt, userPayload) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${env.OPENAI_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: env.OPENAI_MODEL,
-      temperature: 0,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: JSON.stringify(userPayload) }
-      ]
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error("OPENAI_REQUEST_FAILED");
-  }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content ?? "";
-}
-
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // --------------------------------------------------
-    // HEALTH ENDPOINT
-    // --------------------------------------------------
-    if (url.pathname === "/health") {
-      return jsonResponse({
-        status: "healthy",
-        service: "prompt-dispatcher",
-        version: lockfile.version,
-        lockfileVersion: lockfile.lockfileVersion,
-        prompts_count: Object.keys(lockfile.prompts).length,
-        immutable: true,
-        timestamp: new Date().toISOString()
-      });
+    if (url.pathname !== "/dispatch") {
+      return new Response("Not Found", { status: 404 });
     }
 
-    // --------------------------------------------------
-    // DISPATCH ENDPOINT
-    // --------------------------------------------------
-    if (url.pathname === "/dispatch") {
+    if (request.method !== "POST") {
+      return new Response("Method Not Allowed", { status: 405 });
+    }
 
-      if (request.method !== "POST") {
-        return errorResponse(
-          "METHOD_NOT_ALLOWED",
-          "Only POST allowed",
-          false,
-          405
-        );
-      }
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response("Invalid JSON", { status: 400 });
+    }
 
-      let body;
+    const { agent_id, request_payload } = body;
 
-      try {
-        body = await request.json();
-      } catch {
-        return errorResponse(
-          "INVALID_JSON",
-          "Request body must be valid JSON",
-          false,
-          400
-        );
-      }
+    if (!agent_id || !request_payload) {
+      return new Response("Missing required fields", { status: 400 });
+    }
 
-      const { agent_id, request_payload } = body;
+    // 🔐 SERVER-SIDE AUTHORITY
+    const agent = lockfile.prompts[agent_id];
 
-      if (!agent_id || !request_payload) {
-        return errorResponse(
-          "INVALID_REQUEST",
-          "agent_id and request_payload are required",
-          false,
-          400
-        );
-      }
+    if (!agent) {
+      return new Response("Unknown agent", { status: 403 });
+    }
 
-      const agent = lockfile.prompts[agent_id];
+    try {
+      const openaiResponse = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${env.OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: agent.system_prompt },
+              { role: "user", content: JSON.stringify(request_payload) }
+            ]
+          })
+        }
+      );
 
-      // FAIL-CLOSED unknown agent
-      if (!agent) {
-        return errorResponse(
-          "UNKNOWN_AGENT",
-          "Agent not registered in lockfile",
-          true,
-          403
-        );
-      }
+      const data = await openaiResponse.json();
 
-      const dispatch_id = generateDispatchId();
-      const timestamp = new Date().toISOString();
-
-      try {
-        const responseText = await callOpenAI(
-          env,
-          agent.system_prompt,
-          request_payload
-        );
-
-        return jsonResponse({
+      return new Response(
+        JSON.stringify({
           success: true,
           verified: true,
-          dispatch_id,
+          dispatch_id: crypto.randomUUID(),
           agent: {
             id: agent_id,
-            hash: agent.hash,
-            version: lockfile.version
+            version: agent.version,
+            hash: agent.hash
           },
           governance: {
-            mode: "hybrid",
-            immutable: true,
+            lock_version: lockfile.version,
+            lockfileVersion: lockfile.lockfileVersion,
             algorithm: lockfile.algorithm
           },
-          response: responseText,
-          timestamp
-        });
+          output: data.choices?.[0]?.message?.content,
+          timestamp: new Date().toISOString()
+        }),
+        {
+          headers: { "Content-Type": "application/json" }
+        }
+      );
 
-      } catch {
-        return errorResponse(
-          "OPENAI_FAILURE",
-          "Upstream model request failed",
-          false,
-          502
-        );
-      }
+    } catch (err) {
+      return new Response("Model execution failed", { status: 500 });
     }
-
-    // --------------------------------------------------
-    // DEFAULT: FAIL-CLOSED
-    // --------------------------------------------------
-    return errorResponse(
-      "NOT_FOUND",
-      "Endpoint not found",
-      false,
-      404
-    );
   }
 };

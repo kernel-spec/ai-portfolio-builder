@@ -1,6 +1,6 @@
 import lock from './prompt-lock.json' with { type: 'json' };
 
-const SERVICE_VERSION = "2.0.0";
+const SERVICE_VERSION = "1.1.1";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +20,7 @@ function error(status, message) {
   return json({ error: message }, status);
 }
 
-async function callOpenAI(systemPrompt, userInput, env) {
+async function callOpenAI(systemPrompt, userPayload, env) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -28,11 +28,10 @@ async function callOpenAI(systemPrompt, userInput, env) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.2,
+      model: env.OPENAI_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userInput }
+        { role: "user", content: JSON.stringify(userPayload) }
       ]
     })
   });
@@ -42,7 +41,12 @@ async function callOpenAI(systemPrompt, userInput, env) {
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content;
+
+  return {
+    model: data.model,
+    usage: data.usage,
+    output: data.choices?.[0]?.message?.content || null
+  };
 }
 
 export default {
@@ -58,7 +62,7 @@ export default {
         status: "healthy",
         service: "prompt-dispatcher",
         version: SERVICE_VERSION,
-        lock_version: lock.version,
+        lock_file_version: lock.version,
         prompts_count: Object.keys(lock.prompts).length,
         immutable: lock.integrity?.immutable === true
       });
@@ -72,11 +76,22 @@ export default {
       return error(405, "Method not allowed");
     }
 
+    // Strict Content-Type validation
+    const contentType = request.headers.get("Content-Type");
+    if (!contentType || !contentType.includes("application/json")) {
+      return error(400, "Content-Type must be application/json");
+    }
+
     let body;
     try {
       body = await request.json();
     } catch {
       return error(400, "Malformed JSON");
+    }
+
+    // Reject non-object JSON
+    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+      return error(400, "Request body must be a JSON object");
     }
 
     const { agent_id, request_payload } = body;
@@ -87,11 +102,17 @@ export default {
 
     const agent = lock.prompts[agent_id];
 
+    // Reject unknown agent_id → 403
     if (!agent) {
       return json({
-        error: "Unknown agent_id",
+        error: `Unknown agent_id: ${agent_id}`,
         security_flag: true
       }, 403);
+    }
+
+    // Reject missing canonical hash → 500
+    if (!agent.hash) {
+      return error(500, "Missing canonical hash in lock file");
     }
 
     // Load canonical prompt from repo path
@@ -99,12 +120,16 @@ export default {
       new URL(`../${agent.file}`, import.meta.url)
     );
 
+    if (!promptResponse.ok) {
+      return error(500, "Failed to load canonical prompt");
+    }
+
     const systemPrompt = await promptResponse.text();
 
-    let aiOutput;
+    let aiExecution;
 
     try {
-      aiOutput = await callOpenAI(systemPrompt, request_payload, env);
+      aiExecution = await callOpenAI(systemPrompt, request_payload, env);
     } catch {
       return error(500, "Upstream AI failure");
     }
@@ -119,7 +144,11 @@ export default {
         hash: agent.hash,
         type: agent.type
       },
-      output: aiOutput,
+      ai_execution: {
+        model: aiExecution.model,
+        usage: aiExecution.usage,
+        output: aiExecution.output
+      },
       governance: {
         lock_version: lock.version,
         immutable: lock.integrity?.immutable

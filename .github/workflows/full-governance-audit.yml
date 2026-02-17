@@ -1,134 +1,83 @@
-You are acting as an Enterprise AI Infrastructure Auditor.
+name: Full Governance Audit
 
-Your task is to perform a full governance, runtime, and integrity audit of this repository and deployed Cloudflare Worker.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-You must verify deterministic behavior, fail-closed security, immutability enforcement, and injection safety.
+jobs:
+  validate-governance:
+    name: Validate Hybrid Governance Integrity
+    runs-on: ubuntu-24.04
 
-Audit scope includes:
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
------------------------------------
-LAYER 1 — Repository Governance Lock
------------------------------------
+      - name: Validate JSON syntax
+        run: |
+          jq empty versions/prompt-manifest.json
+          jq empty versions/prompt-lock.json
+          jq empty cloudflare-worker/prompt-lock.json
+          echo "✅ JSON syntax valid"
 
-1. Verify versions/prompt-lock.json is the canonical source of truth.
-2. Confirm cloudflare-worker/prompt-lock.json is byte-identical.
-3. Validate:
-   - JSON syntax
-   - lockfileVersion
-   - version consistency with manifest
-   - immutable flag presence
-4. Confirm SHA256 integrity enforcement exists in CI.
-5. Confirm version bump required for any prompt change.
-6. Confirm release tags exist and follow semantic versioning.
-7. Confirm branch protection:
-   - Require PR
-   - Require status checks
-   - Disallow force push
+      - name: Validate hybrid manifest structure
+        run: |
+          jq -e '.version' versions/prompt-manifest.json > /dev/null
+          jq -e '.governance_mode' versions/prompt-manifest.json > /dev/null
+          jq -e '.governance' versions/prompt-manifest.json > /dev/null
+          jq -e '.taxonomy.domains' versions/prompt-manifest.json > /dev/null
+          jq -e '.taxonomy.archetypes' versions/prompt-manifest.json > /dev/null
+          jq -e '.security' versions/prompt-manifest.json > /dev/null
+          jq -e '.compatibility' versions/prompt-manifest.json > /dev/null
 
-Report:
-- PASS / FAIL
-- Evidence
-- Risk level (LOW/MEDIUM/HIGH)
+          DOMAIN_COUNT=$(jq '.taxonomy.domains | length' versions/prompt-manifest.json)
+          ARCHETYPE_COUNT=$(jq '.taxonomy.archetypes | length' versions/prompt-manifest.json)
+          TOTAL_PROMPTS=$(jq '.taxonomy.total_prompts' versions/prompt-manifest.json)
 
------------------------------------
-LAYER 2 — Runtime Integrity Lock
------------------------------------
+          [ "$DOMAIN_COUNT" -eq 10 ] || { echo "❌ Expected 10 domains"; exit 1; }
+          [ "$ARCHETYPE_COUNT" -eq 4 ] || { echo "❌ Expected 4 archetypes"; exit 1; }
+          [ "$TOTAL_PROMPTS" -eq 14 ] || { echo "❌ Expected 14 total prompts"; exit 1; }
 
-Inspect cloudflare-worker/index.js and confirm:
+          echo "✅ Manifest structure valid"
 
-1. Lockfile imported locally.
-2. No dynamic fetch of prompts.
-3. No client-provided prompt_hash accepted.
-4. No string eval or dynamic code execution.
-5. Unknown agent → 403.
-6. Invalid JSON → 400.
-7. Lockfile missing → 500.
-8. No fallback behavior.
-9. No console.log or debug statements.
-10. Health endpoint returns:
-    - service version
-    - lock version
-    - prompts_count
-    - immutable flag
+      - name: Validate lockfile structure
+        run: |
+          jq -e '.version' versions/prompt-lock.json > /dev/null
+          jq -e '.lockfileVersion' versions/prompt-lock.json > /dev/null
+          jq -e '.algorithm' versions/prompt-lock.json > /dev/null
+          jq -e '.prompts' versions/prompt-lock.json > /dev/null
 
-Report deterministic guarantees.
+          LOCK_PROMPT_COUNT=$(jq '.prompts | length' versions/prompt-lock.json)
 
------------------------------------
-LAYER 3 — Dispatch Contract Lock
------------------------------------
+          [ "$LOCK_PROMPT_COUNT" -eq 14 ] || {
+            echo "❌ Lockfile must contain 14 prompts"
+            exit 1
+          }
 
-Validate response structure:
+          echo "✅ Lockfile structure valid"
 
-Success must contain:
-- success
-- verified
-- dispatch_id
-- agent metadata
-- governance metadata
-- timestamp
+      - name: Validate version consistency
+        run: |
+          MANIFEST_VERSION=$(jq -r '.version' versions/prompt-manifest.json)
+          LOCK_VERSION=$(jq -r '.version' versions/prompt-lock.json)
 
-Errors must:
-- include error
-- include reason
-- include security_flag if applicable
-- never include agent metadata on 403
+          [ "$MANIFEST_VERSION" = "$LOCK_VERSION" ] || {
+            echo "❌ Version mismatch"
+            exit 1
+          }
 
-Check for contract drift.
+          echo "✅ Version consistency verified"
 
------------------------------------
-LAYER 4 — OpenAI Injection Boundary
------------------------------------
-
-Verify:
-
-1. system prompt comes strictly from lockfile.
-2. user input is sanitized.
-3. No concatenation of system + user beyond structured messages.
-4. temperature = 0.
-5. No override from request_payload.
-6. Model defined via env var only.
-7. API key never hardcoded.
-
-Confirm canonical prompt assembly:
-
-system = canonical prompt
-user = JSON.stringify(request_payload)
-
-No other assembly logic allowed.
-
------------------------------------
-LAYER 5 — Versioned Promotion Model
------------------------------------
-
-Confirm:
-
-1. Preview deployment uses wrangler versions upload.
-2. Production requires tag.
-3. Rollback path documented.
-4. Health reflects correct version.
-5. Lock version matches Git tag.
-
------------------------------------
-
-FINAL OUTPUT FORMAT:
-
-Return structured audit report:
-
-{
-  "overall_status": "PASS | CONDITIONAL | FAIL",
-  "determinism": "PASS/FAIL",
-  "immutability": "PASS/FAIL",
-  "fail_closed_security": "PASS/FAIL",
-  "injection_safety": "PASS/FAIL",
-  "runtime_integrity": "PASS/FAIL",
-  "governance_integrity": "PASS/FAIL",
-  "deployment_integrity": "PASS/FAIL",
-  "critical_findings": [],
-  "recommendations": [],
-  "enterprise_readiness_score": 0-100
-}
-
-Do not provide marketing language.
-Be forensic.
-Be strict.
-Fail if uncertain.
+      - name: Governance summary
+        run: |
+          echo "----------------------------------------"
+          echo "Hybrid Governance Validation Passed"
+          echo "Version: $(jq -r '.version' versions/prompt-manifest.json)"
+          echo "Domains: $(jq '.taxonomy.domains | length' versions/prompt-manifest.json)"
+          echo "Archetypes: $(jq '.taxonomy.archetypes | length' versions/prompt-manifest.json)"
+          echo "Total Prompts: $(jq '.taxonomy.total_prompts' versions/prompt-manifest.json)"
+          echo "----------------------------------------"

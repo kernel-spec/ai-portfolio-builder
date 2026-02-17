@@ -16,33 +16,16 @@ function json(data, status = 200) {
   });
 }
 
-function error(status, message) {
-  return json({ error: message }, status);
+function error(status, message, details = null) {
+  const response = { error: message };
+  if (details) {
+    response.details = details;
+  }
+  return json(response, status);
 }
 
-async function callOpenAI(systemPrompt, userInput, env) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.2,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userInput }
-      ]
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error("OpenAI call failed");
-  }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content;
+function isValidSHA256(hash) {
+  return typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash);
 }
 
 export default {
@@ -58,13 +41,14 @@ export default {
         status: "healthy",
         service: "prompt-dispatcher",
         version: SERVICE_VERSION,
-        lock_version: lock.version,
+        lock_file_version: lock.version,
+        lockfile_version: lock.lockfileVersion,
         prompts_count: Object.keys(lock.prompts).length,
         immutable: lock.integrity?.immutable === true
       });
     }
 
-    if (url.pathname !== "/dispatch") {
+    if (url.pathname !== "/" && url.pathname !== "/dispatch") {
       return error(404, "Not found");
     }
 
@@ -72,57 +56,92 @@ export default {
       return error(405, "Method not allowed");
     }
 
+    // Strict content-type validation
+    const contentType = request.headers.get("Content-Type");
+    if (!contentType || !contentType.includes("application/json")) {
+      return error(400, "Content-Type must be application/json");
+    }
+
     let body;
     try {
       body = await request.json();
     } catch {
-      return error(400, "Malformed JSON");
+      return error(400, "Invalid JSON body");
     }
 
-    const { agent_id, request_payload } = body;
+    // Fail on non-object request bodies
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+      return error(400, "Invalid request body structure");
+    }
 
-    if (!agent_id || !request_payload) {
-      return error(400, "agent_id and request_payload required");
+    const { agent_id, prompt_hash } = body;
+
+    // Validate required fields
+    const validationErrors = [];
+    if (!agent_id) {
+      validationErrors.push("Missing required field: agent_id");
+    }
+    if (!prompt_hash) {
+      validationErrors.push("Missing required field: prompt_hash");
+    }
+
+    if (validationErrors.length > 0) {
+      return error(400, "Invalid request", validationErrors);
+    }
+
+    // Validate hash format
+    if (!isValidSHA256(prompt_hash)) {
+      return error(400, "Invalid request", [
+        "Invalid prompt_hash format. Must be SHA-256 hex string (64 characters)."
+      ]);
     }
 
     const agent = lock.prompts[agent_id];
 
+    // Reject unknown agent_id (403)
     if (!agent) {
       return json({
-        error: "Unknown agent_id",
+        error: `Hash verification failed for agent '${agent_id}'`,
+        details: {
+          reason: "unknown_agent"
+        },
         security_flag: true
       }, 403);
     }
 
-    // Load canonical prompt from repo path
-    const promptResponse = await fetch(
-      new URL(`../${agent.file}`, import.meta.url)
-    );
-
-    const systemPrompt = await promptResponse.text();
-
-    let aiOutput;
-
-    try {
-      aiOutput = await callOpenAI(systemPrompt, request_payload, env);
-    } catch {
-      return error(500, "Upstream AI failure");
+    // Reject missing canonical hash (500)
+    if (!agent.hash) {
+      return error(500, "Canonical hash missing for agent");
     }
 
+    // Verify hash matches
+    if (agent.hash !== prompt_hash) {
+      return json({
+        error: `Hash verification failed for agent '${agent_id}'`,
+        details: {
+          reason: "hash_mismatch",
+          expected_hash: agent.hash,
+          received_hash: prompt_hash
+        },
+        security_flag: true
+      }, 403);
+    }
+
+    // Success response with exact structure
     return json({
       success: true,
       verified: true,
+      message: "Prompt integrity verified. Ready for dispatch.",
       dispatch_id: crypto.randomUUID(),
       agent: {
         agent_id,
+        type: agent.type,
         version: agent.version,
-        hash: agent.hash,
-        type: agent.type
+        hash: agent.hash
       },
-      output: aiOutput,
       governance: {
         lock_version: lock.version,
-        immutable: lock.integrity?.immutable
+        immutable: lock.integrity?.immutable === true
       },
       timestamp: new Date().toISOString()
     });

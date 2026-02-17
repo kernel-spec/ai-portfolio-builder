@@ -12,6 +12,8 @@ jobs:
   validate-model-contract:
     name: Validate Model Contract
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository

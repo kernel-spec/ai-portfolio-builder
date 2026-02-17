@@ -1,5 +1,6 @@
 # Branch Management Protocol
-Version: 1.1.0
+Version: 1.1.0  
+Effective Date: 2026-02-17
 
 ---
 
@@ -21,8 +22,7 @@ The following branches are protected and must be retained:
   - Always reflects deployed production state
 
 ### Release Branches
-- **`release/1.1.0`** — Current release branch
-- **`release/*`** — Pattern for version-specific releases
+- **`release/*`** — Pattern for version-specific releases (e.g., `release/1.1.0`)
   - Used for version-specific maintenance
   - Follows semantic versioning (MAJOR.MINOR.PATCH)
   - Receives only critical fixes after branch creation

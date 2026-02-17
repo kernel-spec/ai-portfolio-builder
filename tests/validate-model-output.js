@@ -59,6 +59,7 @@ console.log('✅ All validations passed successfully');
 console.log('─────────────────────────────────────');
 console.log(`Expected ARR_12M: ${expectedARR12}`);
 console.log(`Actual ARR_12M: ${actualARR12}`);
+// Schema validation guarantees sensitivity_grid.matrix exists and has required structure
 const matrixRows = modelOutput.sensitivity_grid.matrix.length;
 const matrixCols = matrixRows > 0 ? modelOutput.sensitivity_grid.matrix[0].length : 0;
 console.log(`Sensitivity Grid: ${matrixRows}x${matrixCols}`);

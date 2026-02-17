@@ -9,85 +9,85 @@
       "file": "domains/01_content.md",
       "hash": "f000dc4ec80987eb68d310330024d5f28891d394c38a477c6a0547dd805c7079",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "domain-02-analysis": {
       "file": "domains/02_analysis.md",
       "hash": "45bd58d4dd6a817f069c9d030a0915fcb5b43107ce1b7d150f0ca8f288a34d7b",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "domain-03-project-management": {
       "file": "domains/03_project_management.md",
       "hash": "1a690b9a2299da1a92e048033dfc44ef24a13e31127009e731a9ab2a9c1ae577",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "domain-04-marketing": {
       "file": "domains/04_marketing.md",
       "hash": "4dd4a2501798d54a5a185f79cfda1e372728281f039d48d5a33f58bf2ad5bc43",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "domain-05-product": {
       "file": "domains/05_product.md",
       "hash": "072238a9b95110d3223bd8b0453ad6527b62a2bdb0a1ec422119b40c4c6f9d6a",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "domain-06-education": {
       "file": "domains/06_education.md",
       "hash": "c23e95fcea9fb363ba3bf3047da6cb199d8937e9eeff5730e0cdb748e983b8c0",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "domain-07-personal": {
       "file": "domains/07_personal_dev.md",
       "hash": "618f5ae41c17a2f8994309b1959fbed57212b0e32fa4de9e29a87fae289d5179",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "domain-08-business": {
       "file": "domains/08_business.md",
       "hash": "a2db489ceef8b912eac51b0eaa365def7da6e6c746a84a343634b8cdb61b0e53",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "domain-09-technical": {
       "file": "domains/09_technical.md",
       "hash": "89cfc98571c64b906dbd262afa5deea69da6352fa7263526490ea9f9680332a0",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "domain-10-communication": {
       "file": "domains/10_communication.md",
       "hash": "3597b96b783d6daf751426f0715e41a41ee9a6e64ec90d0f418873e10e99a517",
       "type": "domain",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "product-thinker": {
       "file": "archetypes/product_thinker.md",
       "hash": "73f0b771314380659bebd5d01f9bed6db52ac68c938f02d2c871c9a97863c1b8",
       "type": "archetype",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "growth-operator": {
       "file": "archetypes/growth_operator.md",
       "hash": "cdba0abe6fb6f923da960cf846251f422dc4f6fc765995cb024abaaea309642b",
       "type": "archetype",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "learning-designer": {
       "file": "archetypes/learning_designer.md",
       "hash": "678e67751a71ed2dcc1f52c213fe2532a1ca18898759762340ec121d61338331",
       "type": "archetype",
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     "delivery-planner": {
       "file": "archetypes/delivery_planner.md",
       "hash": "bab95087b2c7a5970107efe487030cc49b1eaac8acb16ee5e18b59bbfc72307e",
       "type": "archetype",
-      "version": "1.0.0"
+      "version": "1.1.0"
     }
   },
   "integrity": {

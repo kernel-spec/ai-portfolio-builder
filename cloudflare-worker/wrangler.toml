@@ -1,5 +1,5 @@
 name = "ai-portfolio-builder"
-main = "index.js"
+main = "src/index.js"
 compatibility_date = "2026-02-17"
 
 account_id = "e506d2ef2602866c8b18942256a5b3b2"
@@ -10,6 +10,9 @@ workers_dev = true
 ENVIRONMENT = "production"
 WORKER_VERSION = "1.1.0"
 LOCK_FILE_VERSION = "1.1.0"
+
+[observability]
+enabled = true
 
 [[kv_namespaces]]
 binding = "PROMPT_CACHE"

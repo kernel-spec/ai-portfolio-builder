@@ -105,7 +105,7 @@ export default {
     // Reject unknown agent_id → 403
     if (!agent) {
       return json({
-        error: `Unknown agent_id: ${agent_id}`,
+        error: "Unknown agent_id",
         security_flag: true
       }, 403);
     }

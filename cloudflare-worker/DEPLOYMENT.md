@@ -1,5 +1,11 @@
 # Cloudflare Worker Deployment Guide (v1.1.1)
 
+## Breaking Changes from v1.0.0
+
+⚠️ **API Changes:**
+- Health endpoint field renamed: `lock_version` → `lock_file_version`
+- Update any clients consuming the `/health` endpoint
+
 ## Production Requirements
 
 ### Environment Variables

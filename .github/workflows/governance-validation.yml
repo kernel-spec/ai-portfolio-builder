@@ -95,6 +95,12 @@ jobs:
             file=$(jq -r ".prompts[\"$key\"].file" versions/prompt-lock.json)
             expected=$(jq -r ".prompts[\"$key\"].hash" versions/prompt-lock.json)
             
+            # Check if file exists
+            if [ ! -f "$file" ]; then
+              echo "❌ File not found: $file (agent: $key)"
+              exit 1
+            fi
+            
             # Recompute SHA256 hash
             actual=$(sha256sum "$file" | awk '{print $1}')
             

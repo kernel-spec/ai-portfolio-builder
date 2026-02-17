@@ -85,7 +85,42 @@ jobs:
           echo "✅ Version consistency verified"
 
       # ------------------------------------------------------------
-      # 5️⃣ Governance Summary
+      # 5️⃣ Recompute Prompt Hashes (CI Hash Enforcement)
+      # ------------------------------------------------------------
+      - name: Recompute Prompt Hashes
+        run: |
+          echo "🔒 Recomputing and verifying prompt hashes..."
+          
+          for key in $(jq -r '.prompts | keys[]' versions/prompt-lock.json); do
+            file=$(jq -r ".prompts[\"$key\"].file" versions/prompt-lock.json)
+            expected=$(jq -r ".prompts[\"$key\"].hash" versions/prompt-lock.json)
+            
+            # Check if file exists
+            if [ ! -f "$file" ]; then
+              echo "❌ File not found: $file (agent: $key)"
+              exit 1
+            fi
+            
+            # Recompute SHA256 hash
+            actual=$(sha256sum "$file" | awk '{print $1}')
+            
+            echo "Checking $key: $file"
+            echo "  Expected: $expected"
+            echo "  Actual:   $actual"
+            
+            if [ "$actual" != "$expected" ]; then
+              echo "❌ Hash mismatch for $file"
+              echo "   Agent: $key"
+              echo "   Expected: $expected"
+              echo "   Got:      $actual"
+              exit 1
+            fi
+          done
+          
+          echo "✅ All prompt hashes verified"
+
+      # ------------------------------------------------------------
+      # 6️⃣ Governance Summary
       # ------------------------------------------------------------
       - name: Governance summary
         run: |

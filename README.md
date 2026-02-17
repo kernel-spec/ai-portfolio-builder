@@ -4,8 +4,8 @@
 
 This repository contains a **governed set of domain atoms and archetypes** for building AI assistant capabilities with strict domain boundaries, cryptographic hash verification, and production-grade governance enforcement.
 
-**Version**: 1.1.0  
-**Status**: Enterprise-Grade, Hybrid Governance, Production-Ready
+**Version**: 1.1.1 (Service) / 1.1.0 (Lock Files)  
+**Status**: Production Lock - Enterprise-Grade Immutable Baseline
 
 ---
 
@@ -240,6 +240,41 @@ Current version: 1.1.0
 
 ⸻
 
+## What's New in v1.1.1
+
+**Production Lock - Enterprise-Grade Immutable Baseline**
+
+This release implements comprehensive production hardening:
+
+### Runtime Layer
+- ✅ Deterministic worker behavior
+- ✅ Fail-closed security model
+- ✅ Strict Content-Type validation
+- ✅ Structured error responses
+- ✅ Zero debug code (no console.log, eval)
+
+### OpenAI Execution
+- ✅ Canonical prompt injection (system messages)
+- ✅ Structured AI execution metadata
+- ✅ Configurable model (env.OPENAI_MODEL)
+- ✅ Usage tracking and output capture
+
+### CI Enforcement
+- ✅ SHA256 hash recomputation
+- ✅ Automatic hash mismatch detection
+- ✅ File existence validation
+- ✅ Fail-fast on integrity violations
+
+### Security
+- ✅ Code review: 3 issues resolved
+- ✅ CodeQL scan: 0 vulnerabilities
+- ✅ No information disclosure
+- ✅ Sanitized error messages
+
+See `PRODUCTION_VERIFICATION.md` for complete details.
+
+⸻
+
 Design Philosophy
 
 This system is built on:
@@ -260,3 +295,4 @@ Support
 	•	Security → SECURITY.md
 	•	Governance → protocols/
 	•	CI rules → .github/workflows/
+	•	Deployment → cloudflare-worker/DEPLOYMENT.md

@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "timestamp": "2026-02-17T15:18:17.568Z",
+    "version": "1.1.1"
+  },
+  "input_snapshot": {
+    "arr": 5000000,
+    "growth_rate": 0.4,
+    "monthly_burn": 250000,
+    "gross_margin": 0.8,
+    "runway_months": 18,
+    "valuation_multiple_current": 7,
+    "team_size": 35
+  },
+  "executive_summary": {
+    "core_position": "High-growth SaaS with 18-month runway",
+    "primary_constraint": "Capital efficiency required",
+    "dominant_variable": "growth_rate",
+    "strategic_posture": "Balanced growth with burn optimization"
+  },
+  "financial_model": {
+    "arr_12m": 7000000,
+    "burn_multiple": 0.6,
+    "valuation_current": 35000000,
+    "valuation_12m_base_multiple": 49000000
+  },
+  "valuation_model": {
+    "current_valuation": 35000000,
+    "projected_valuation_12m": 49000000,
+    "multiple_current": 7,
+    "multiple_projected": 7
+  },
+  "sensitivity_grid": {
+    "growth_axis": [0.30, 0.40, 0.50],
+    "multiple_axis": [6, 7, 8, 9],
+    "matrix": [
+      [39000000, 45500000, 52000000, 58500000],
+      [42000000, 49000000, 56000000, 63000000],
+      [45000000, 52500000, 60000000, 67500000]
+    ]
+  },
+  "risk_matrix": [
+    {
+      "risk_type": "liquidity",
+      "severity": 0.9,
+      "reversibility": 0.4
+    },
+    {
+      "risk_type": "multiple_compression",
+      "severity": 0.8,
+      "reversibility": 0.1
+    }
+  ],
+  "decision_framework": {
+    "core_tradeoff": "Growth velocity vs burn efficiency",
+    "capital_strategy_bias": "Extend runway while maintaining growth",
+    "dominant_variable": "growth_rate",
+    "recommended_path": "Optimize unit economics before next raise"
+  },
+  "confidence_model": {
+    "revenue_stability": 0.8,
+    "capital_buffer": 0.75,
+    "market_signal": 0.7,
+    "confidence_score": 0.76
+  }
+}

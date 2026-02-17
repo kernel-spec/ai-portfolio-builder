@@ -1,0 +1,29 @@
+name: Model Contract Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-model-contract:
+    name: Validate Model Output Contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install AJV
+        run: npm install --no-save ajv
+
+      - name: Validate Model Contract
+        run: node tests/validate-model-output.js

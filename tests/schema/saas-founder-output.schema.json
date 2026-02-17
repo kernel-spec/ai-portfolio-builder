@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SaaS Founder Engine Output Schema",
+  "description": "Strict validation schema for deterministic SaaS founder decision engine output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "input_snapshot",
+    "executive_summary",
+    "financial_model",
+    "valuation_model",
+    "sensitivity_grid",
+    "risk_matrix",
+    "decision_framework",
+    "confidence_model"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "input_snapshot": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "executive_summary": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "financial_model": {
+      "type": "object",
+      "required": ["arr_12m"],
+      "properties": {
+        "arr_12m": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "valuation_model": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "sensitivity_grid": {
+      "type": "object",
+      "required": ["growth_axis", "multiple_axis", "matrix"],
+      "properties": {
+        "growth_axis": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "multiple_axis": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "matrix": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "additionalProperties": true
+    },
+    "risk_matrix": {
+      "type": "array"
+    },
+    "decision_framework": {
+      "type": "object",
+      "required": [
+        "core_tradeoff",
+        "capital_strategy_bias",
+        "dominant_variable",
+        "recommended_path"
+      ],
+      "properties": {
+        "core_tradeoff": {
+          "type": "string"
+        },
+        "capital_strategy_bias": {
+          "type": "string"
+        },
+        "dominant_variable": {
+          "type": "string"
+        },
+        "recommended_path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "confidence_model": {
+      "type": "object",
+      "required": ["confidence_score"],
+      "properties": {
+        "confidence_score": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

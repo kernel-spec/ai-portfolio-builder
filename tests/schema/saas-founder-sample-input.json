@@ -1,0 +1,9 @@
+{
+  "arr": 5000000,
+  "growth_rate": 0.4,
+  "monthly_burn": 250000,
+  "gross_margin": 0.8,
+  "runway_months": 18,
+  "valuation_multiple_current": 7,
+  "team_size": 35
+}

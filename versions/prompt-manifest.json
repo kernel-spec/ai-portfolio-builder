@@ -2,25 +2,40 @@
   "version": "1.1.0",
   "governance_mode": "hybrid",
   "governance": {
-    "immutable": true,
-    "fail_closed": true
+    "model": "lockfile-enforced",
+    "immutable_between_versions": true,
+    "fail_closed": true,
+    "runtime_integrity_required": true
   },
   "taxonomy": {
     "domains": [
-      "finance","strategy","product","growth","legal",
-      "ops","sales","talent","risk","governance"
+      "strategy",
+      "finance",
+      "product",
+      "growth",
+      "operations",
+      "legal",
+      "technology",
+      "data",
+      "marketing",
+      "governance"
     ],
     "archetypes": [
-      "analyst","operator","architect","board"
+      "founder",
+      "operator",
+      "investor",
+      "board"
     ],
     "total_prompts": 14
   },
   "security": {
-    "hash_algorithm": "sha256",
-    "lock_enforced": true
+    "fail_closed_on_unknown_agent": true,
+    "no_runtime_prompt_mutation": true,
+    "no_client_hash_override": true,
+    "hash_algorithm": "sha256"
   },
   "compatibility": {
-    "runtime": "cloudflare-worker",
-    "schema_version": "1.1.0"
+    "minimum_worker_version": "1.1.0",
+    "lockfile_required": true
   }
 }

@@ -1,11 +1,11 @@
-import lock from "./prompt-lock.json" with { type: "json" };
+import lock from './prompt-lock.json' with { type: 'json' };
 
-const SERVICE_VERSION = "1.2.0";
+const SERVICE_VERSION = "2.0.0";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Content-Type": "application/json"
 };
 
@@ -20,113 +20,111 @@ function error(status, message) {
   return json({ error: message }, status);
 }
 
+async function callOpenAI(systemPrompt, userInput, env) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userInput }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error("OpenAI call failed");
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // -----------------------------
-    // CORS
-    // -----------------------------
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 200, headers: CORS_HEADERS });
     }
 
-    // -----------------------------
-    // HEALTH
-    // -----------------------------
-    if (url.pathname === "/health" && request.method === "GET") {
+    if (url.pathname === "/health") {
       return json({
         status: "healthy",
-        service: "governance-gateway",
+        service: "prompt-dispatcher",
         version: SERVICE_VERSION,
         lock_version: lock.version,
-        immutable: lock.integrity?.immutable === true,
-        prompts_count: Object.keys(lock.prompts).length
+        prompts_count: Object.keys(lock.prompts).length,
+        immutable: lock.integrity?.immutable === true
       });
     }
 
-    // -----------------------------
-    // DISPATCH
-    // -----------------------------
-    if (url.pathname === "/dispatch") {
-      if (request.method !== "POST") {
-        return error(405, "Method not allowed");
-      }
+    if (url.pathname !== "/dispatch") {
+      return error(404, "Not found");
+    }
 
-      let body;
-      try {
-        body = await request.json();
-      } catch {
-        return error(400, "Invalid JSON");
-      }
+    if (request.method !== "POST") {
+      return error(405, "Method not allowed");
+    }
 
-      const { agent_id, request_payload } = body;
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return error(400, "Malformed JSON");
+    }
 
-      if (!agent_id || typeof agent_id !== "string") {
-        return error(400, "Invalid agent_id");
-      }
+    const { agent_id, request_payload } = body;
 
-      if (!request_payload || typeof request_payload !== "string") {
-        return error(400, "request_payload must be string");
-      }
+    if (!agent_id || !request_payload) {
+      return error(400, "agent_id and request_payload required");
+    }
 
-      const agent = lock.prompts[agent_id];
+    const agent = lock.prompts[agent_id];
 
-      if (!agent) {
-        return json(
-          { error: "Unknown agent", security_flag: true },
-          403
-        );
-      }
-
-      if (!lock.integrity?.immutable) {
-        return json(
-          { error: "Lockfile integrity violation", security_flag: true },
-          500
-        );
-      }
-
-      const dispatchId = crypto.randomUUID();
-
-      // 🔐 Canonical system prompt injection
-      const systemPrompt = agent.system_prompt;
-
-      const openaiResponse = await fetch(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${env.OPENAI_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: agent.model || "gpt-4o-mini",
-            temperature: agent.temperature ?? 0.2,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: request_payload }
-            ]
-          })
-        }
-      );
-
-      if (!openaiResponse.ok) {
-        return error(502, "Upstream model error");
-      }
-
-      const result = await openaiResponse.json();
-
+    if (!agent) {
       return json({
-        success: true,
-        dispatch_id: dispatchId,
-        agent_id,
-        model: result.model,
-        usage: result.usage,
-        response: result.choices?.[0]?.message?.content,
-        timestamp: new Date().toISOString()
-      });
+        error: "Unknown agent_id",
+        security_flag: true
+      }, 403);
     }
 
-    return error(404, "Not found");
+    // Load canonical prompt from repo path
+    const promptResponse = await fetch(
+      new URL(`../${agent.file}`, import.meta.url)
+    );
+
+    const systemPrompt = await promptResponse.text();
+
+    let aiOutput;
+
+    try {
+      aiOutput = await callOpenAI(systemPrompt, request_payload, env);
+    } catch {
+      return error(500, "Upstream AI failure");
+    }
+
+    return json({
+      success: true,
+      verified: true,
+      dispatch_id: crypto.randomUUID(),
+      agent: {
+        agent_id,
+        version: agent.version,
+        hash: agent.hash,
+        type: agent.type
+      },
+      output: aiOutput,
+      governance: {
+        lock_version: lock.version,
+        immutable: lock.integrity?.immutable
+      },
+      timestamp: new Date().toISOString()
+    });
   }
 };

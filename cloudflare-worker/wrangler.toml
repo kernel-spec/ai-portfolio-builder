@@ -1,8 +1,36 @@
 name = "ai-portfolio-builder"
 main = "index.js"
-compatibility_date = "2024-12-01"
+compatibility_date = "2026-02-01"
+workers_dev = true
+
+# --------------------------------------------------
+# Variables (non-secret)
+# --------------------------------------------------
 
 [vars]
 OPENAI_MODEL = "gpt-4o-mini"
+ENVIRONMENT = "production"
+
+# --------------------------------------------------
+# KV Namespace (PRODUCTION)
+# --------------------------------------------------
+
+[[kv_namespaces]]
+binding = "PROMPT_CACHE"
+id = "93fbd6d5157e427982298c6cbe8a05d4"
+
+# --------------------------------------------------
+# Production Environment (required for --env=production)
+# --------------------------------------------------
 
 [env.production]
+name = "ai-portfolio-builder"
+workers_dev = true
+
+[env.production.vars]
+OPENAI_MODEL = "gpt-4o-mini"
+ENVIRONMENT = "production"
+
+[[env.production.kv_namespaces]]
+binding = "PROMPT_CACHE"
+id = "93fbd6d5157e427982298c6cbe8a05d4"

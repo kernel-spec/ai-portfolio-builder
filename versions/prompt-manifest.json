@@ -1,37 +1,8 @@
 {
   "version": "1.1.0",
-  "governance_mode": "hybrid",
-  "governance": {
-    "model": "hybrid",
-    "validation": "ci-enforced",
-    "lockfile_required": true
-  },
-  "taxonomy": {
-    "domains": [
-      "domain-01-content",
-      "domain-02-analysis",
-      "domain-03-project-management",
-      "domain-04-marketing",
-      "domain-05-product",
-      "domain-06-education",
-      "domain-07-personal",
-      "domain-08-business",
-      "domain-09-technical",
-      "domain-10-communication"
-    ],
-    "archetypes": [
-      "delivery-planner",
-      "growth-operator",
-      "learning-designer",
-      "product-thinker"
-    ],
-    "total_prompts": 14
-  },
-  "security": {
-    "hash_algorithm": "sha256",
-    "immutable_lockfile": true
-  },
-  "compatibility": {
-    "minimum_version": "1.0.0"
-  }
+  "domains_count": 10,
+  "archetypes_count": 4,
+  "integrity_model": "sha256",
+  "attestation": "runtime-internal",
+  "fail_closed": true
 }

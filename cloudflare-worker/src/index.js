@@ -1,4 +1,4 @@
-import lockfile from "./prompt-lock.json";
+import lockfile from "../prompt-lock.json";
 
 export default {
   async fetch(request, env) {
@@ -19,7 +19,7 @@ export default {
       return new Response("Invalid JSON", { status: 400 });
     }
 
-    const { agent_id, request_payload } = body;
+    const { agent_id, request_payload } = await request.json();
 
     if (!agent_id || !request_payload) {
       return new Response("Missing required fields", { status: 400 });

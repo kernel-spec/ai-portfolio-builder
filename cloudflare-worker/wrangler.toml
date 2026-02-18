@@ -11,6 +11,9 @@ ENVIRONMENT = "production"
 WORKER_VERSION = "1.1.0"
 LOCK_FILE_VERSION = "1.1.0"
 
+[observability]
+enabled = true
+
 [[kv_namespaces]]
 binding = "PROMPT_CACHE"
 id = "93fbd6d5157e427982298c6cbe8a05d4"

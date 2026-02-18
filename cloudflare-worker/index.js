@@ -1,4 +1,4 @@
-import lockfile from "./prompt-lock.json";
+import lockfile from "./prompt-lock.json" assert { type: "json" };
 
 export default {
   async fetch(request, env) {

@@ -1,5 +1,5 @@
 name = "ai-portfolio-builder"
-main = "index.js"
+main = "src/index.js"
 compatibility_date = "2026-02-17"
 
 account_id = "e506d2ef2602866c8b18942256a5b3b2"

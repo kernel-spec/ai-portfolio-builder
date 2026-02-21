@@ -1,0 +1,28 @@
+{
+  "audit_metadata": {
+    "bundle_version": "1.0.0",
+    "timestamp_utc": "2026-02-12T00:34:21.130053+00:00",
+    "repository_version": "1.0.0",
+    "audit_mode": "FAIL-CLOSED"
+  },
+  "inventory": {
+    "total_domains": 10,
+    "total_archetypes": 4,
+    "total_prompts": 14,
+    "ci_workflows_count": 5,
+    "gpt_config_count": 15,
+    "total_required_files": 47
+  },
+  "validation_results": {
+    "hash_integrity_status": "PASS",
+    "lock_sync_status": "SYNCED",
+    "missing_files_count": 0,
+    "hash_mismatches_count": 0
+  },
+  "issues": {
+    "missing_files": [],
+    "hash_mismatches": []
+  },
+  "deployment_ready": true,
+  "verdict": "READY_FOR_RUNTIME"
+}

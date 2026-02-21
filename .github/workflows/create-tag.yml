@@ -1,0 +1,46 @@
+name: Create and Push Tag v1.1.0
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to create (e.g., v1.1.0)'
+        required: true
+        default: 'v1.1.0'
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+      
+      - name: Create and push tag
+        run: |
+          TAG_NAME="${{ github.event.inputs.tag_name }}"
+          echo "Creating tag: $TAG_NAME"
+          
+          # Create the tag
+          git tag "$TAG_NAME"
+          
+          # Push the tag to origin
+          git push origin "$TAG_NAME"
+          
+          echo "✅ Tag $TAG_NAME created and pushed successfully"
+      
+      - name: Verify tag
+        run: |
+          TAG_NAME="${{ github.event.inputs.tag_name }}"
+          git tag -l "$TAG_NAME"
+          git show "$TAG_NAME" --no-patch

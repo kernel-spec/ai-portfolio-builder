@@ -1,0 +1,28 @@
+{
+  "name": "ai-portfolio-builder",
+  "version": "1.0.0",
+  "description": "10-Domain Canonical Taxonomy for AI System Prompts",
+  "main": "index.js",
+  "scripts": {
+    "wrangler:version": "wrangler --version"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kernel-spec/ai-portfolio-builder.git"
+  },
+  "keywords": [
+    "ai",
+    "prompts",
+    "cloudflare",
+    "workers"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kernel-spec/ai-portfolio-builder/issues"
+  },
+  "homepage": "https://github.com/kernel-spec/ai-portfolio-builder#readme",
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

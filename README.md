@@ -32,6 +32,13 @@ AI Portfolio Builder is a governed prompt orchestration system implementing:
 
 ---
 
+## Governance Protocols
+
+- [Governance Protocol](protocols/governance.md) — Core governance rules
+- [Branch Management Protocol](protocols/branch-management.md) — Branch protection and lifecycle
+
+---
+
 ## Dispatch Model (v1.1.0)
 
 Client provides:

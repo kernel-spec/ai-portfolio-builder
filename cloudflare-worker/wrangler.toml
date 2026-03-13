@@ -1,4 +1,4 @@
-name = "ai-portfolio-builder"
+name = "ai-portfolio-dispatcher"
 main = "src/index.js"
 compatibility_date = "2026-02-17"
 

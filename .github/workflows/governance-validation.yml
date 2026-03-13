@@ -25,7 +25,7 @@ jobs:
           jq empty versions/prompt-manifest.json
           jq empty versions/prompt-lock.json
           jq empty cloudflare-worker/prompt-lock.json
-
+          echo "✅ JSON syntax valid"
       # ------------------------------------------------------------
       # 2️⃣ Validate Hybrid Manifest Structure
       # ------------------------------------------------------------

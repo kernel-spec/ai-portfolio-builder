@@ -1,4 +1,4 @@
-name = "ai-portfolio-dispatcher"
+name = "ai-portfolio-builder"
 main = "src/index.js"
 compatibility_date = "2026-02-17"
 
@@ -19,4 +19,4 @@ binding = "PROMPT_CACHE"
 id = "93fbd6d5157e427982298c6cbe8a05d4"
 
 [env.production]
-name = "ai-portfolio-dispatcher"
+name = "ai-portfolio-builder"

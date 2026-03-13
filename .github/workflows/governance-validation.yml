@@ -22,9 +22,9 @@ jobs:
       # ------------------------------------------------------------
       - name: Validate JSON syntax
         run: |
-          jq empty versions/prompt-manifest.json
-          jq empty versions/prompt-lock.json
-          jq empty cloudflare-worker/prompt-lock.json
+          jq . versions/prompt-manifest.json > /dev/null
+          jq . versions/prompt-lock.json > /dev/null
+          jq . cloudflare-worker/prompt-lock.json > /dev/null
           echo "✅ JSON syntax valid"
 
       # ------------------------------------------------------------
